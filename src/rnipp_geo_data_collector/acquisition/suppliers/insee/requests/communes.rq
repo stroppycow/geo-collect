@@ -1,0 +1,39 @@
+PREFIX igeo: <http://rdf.insee.fr/def/geo#>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema>
+
+SELECT ?uri ?insee_code ?label ?article_code ?depatement_insee_code ?start_date ?end_date ?depatement_insee_code_count ?start_date_count ?end_date_count
+WHERE {
+    ?uri a igeo:Commune .
+    ?uri igeo:codeINSEE ?insee_code .
+    ?uri igeo:nom ?label .
+    OPTIONAL {?uri igeo:codeArticle ?article_code .} .
+    OPTIONAL {
+        SELECT ?uri (GROUP_CONCAT(DISTINCT ?dep_code; SEPARATOR=",") AS ?depatement_insee_code) (COUNT(DISTINCT ?dep_code) AS ?depatement_insee_code_count_temp)
+        WHERE {
+            ?uri igeo:subdivisionDirecteDe ?URISub .
+            ?URISub a igeo:Departement .
+            ?URISub igeo:codeINSEE ?dep_code
+        } GROUP BY ?uri
+    }
+    OPTIONAL {
+        SELECT ?uri (GROUP_CONCAT(DISTINCT STR(?dateCrea); SEPARATOR=",") AS ?start_date) (COUNT(DISTINCT ?dateCrea) AS ?start_date_count_temp)
+        WHERE {
+            ?URIEvt a igeo:EvenementGeographique .
+            ?URIEvt igeo:creation ?uri .
+            ?URIEvt igeo:date ?dateCrea
+        }
+        GROUP BY ?uri
+    }
+    OPTIONAL {
+        SELECT ?uri (GROUP_CONCAT(DISTINCT STR(?dateSupp); SEPARATOR=",") AS ?end_date) (COUNT(DISTINCT ?dateSupp) AS ?end_date_count_temp)
+        WHERE {
+            ?URIEvt a igeo:EvenementGeographique .
+            ?URIEvt igeo:suppression ?uri .
+            ?URIEvt igeo:date ?dateSupp
+        }
+        GROUP BY ?uri
+    }
+    BIND(IF(BOUND(?depatement_insee_code_count_temp), ?depatement_insee_code_count_temp, "0"^^xsd:integer ) AS  ?depatement_insee_code_count)
+    BIND(IF(BOUND(?start_date_count_temp), ?start_date_count_temp, "0"^^xsd:integer ) AS  ?start_date_count)
+    BIND(IF(BOUND(?end_date_count_temp), ?end_date_count_temp, "0"^^xsd:integer ) AS  ?end_date_count)
+}

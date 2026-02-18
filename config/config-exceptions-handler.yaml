@@ -1,0 +1,30 @@
+insee:
+  communes:
+    date_consistency:
+      - uri: "http://id.insee.fr/geo/commune/76c37d0f-88fd-47b3-9674-000b0e667910"
+        start_date: "1942-01-01"
+        end_date: "1943-10-01"
+      - uri: "http://id.insee.fr/geo/commune/bc622910-0e35-4b04-aab8-30d3ecf6d013"
+        start_date: "1942-01-01"
+        end_date: "1942-08-01"
+      - uri: "http://id.insee.fr/geo/commune/def17c47-5128-401d-9e42-0690d8c0daae"
+        start_date: "1942-01-01"
+        end_date: "1942-08-01"
+      - uri: "http://id.insee.fr/geo/commune/2830f25b-ab37-48f3-8afb-6f20075c613f"
+        start_date: "1942-01-01"
+        end_date: "1942-11-01"
+      - uri: "http://id.insee.fr/geo/commune/d50ff06d-77a1-42e9-bde5-b2a612b89919"
+        start_date: "1942-01-01"
+        end_date: "1942-10-01"
+      - uri: "http://id.insee.fr/geo/commune/4aa381ad-cca4-4ea5-9b86-e0a97547976a"
+        start_date: "1942-01-01"
+        end_date: "1942-10-01"
+      - uri: "http://id.insee.fr/geo/commune/cf2860cc-d888-447d-9465-db009f1f97c7"
+        start_date: "1942-01-01"
+        end_date: "1942-11-01"
+      - uri: "http://id.insee.fr/geo/commune/9fb6ef39-03a0-4d56-b10f-abbcc94e41be"
+        start_date: "1942-01-01"
+        end_date: "1942-10-01"
+  collectivites_outremer:
+    insee_code:
+      - uri: "http://id.insee.fr/geo/collectiviteDOutreMer/163502e0-72fb-4dab-99d8-996a858733c9"

@@ -1,0 +1,43 @@
+[project]
+name = "rnipp-geo-data-collector"
+version = "0.0.1"
+authors = [
+  { name="Théo Leroy", email="theo.leroy@insee.fr" },
+]
+description = "Geographic data collector for "
+readme = "README.md"
+requires-python = ">=3.11"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
+]
+license = "MIT"
+
+
+[tool.poetry]
+packages = [{include = "rnipp_geo_data_collector", from = "src"}]
+
+
+[tool.poetry.dependencies]
+tqdm = "^4.67.1"
+pandas = "^3.0.0"
+igraph = "^1.0.0"
+numpy = "^2.4.2"
+urllib3 = "^2.6.3"
+requests = "^2.32.5"
+typer = "^0.23.0"
+pydantic = "^2.12.5"
+duckdb = "^1.4.4"
+pystache = "^0.6.8"
+PyYAML = "^6.0.2"
+
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["rnipp_geo_data_collector*"]
+
+[project.scripts]
+geo_data_collector = "rnipp_geo_data_collector.cli:app"

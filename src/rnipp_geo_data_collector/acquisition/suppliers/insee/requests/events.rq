@@ -1,0 +1,38 @@
+PREFIX igeo: <http://rdf.insee.fr/def/geo#>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+
+SELECT ?uri ?date ?added_entities ?removed_entities ?added_entities_count ?removed_entities_count
+WHERE {
+        ?uri a igeo:EvenementGeographique . 
+        ?uri igeo:date ?date .
+        OPTIONAL {
+            SELECT ?uri (GROUP_CONCAT(DISTINCT ?texteCrea; SEPARATOR="|") AS ?added_entities) (COUNT(DISTINCT ?crea) as ?added_entities_count_temp)
+            WHERE {
+                ?uri igeo:creation ?crea .
+                ?crea rdf:type ?typeEntite .
+                ?crea igeo:codeINSEE ?codeCrea .
+                ?crea igeo:nom ?nomCrea .
+                FILTER(STRSTARTS(STR(?typeEntite), "http://rdf.insee.fr/def/geo#"))
+                BIND(CONCAT(STR(?crea)," ",STR(?codeCrea), " ",STR(?nomCrea)) AS ?texteCrea ) .
+            }
+            GROUP BY ?uri
+        }
+        OPTIONAL {
+            SELECT ?uri (GROUP_CONCAT(DISTINCT ?texteSupp; SEPARATOR="|") AS ?removed_entities) (COUNT(DISTINCT ?suppr) as ?removed_entities_count_temp) 
+            WHERE {
+                ?uri igeo:suppression ?suppr .
+                ?suppr rdf:type ?typeEntite .
+                ?suppr igeo:codeINSEE ?codeSupp .
+                ?suppr igeo:nom ?nomSupp .
+                FILTER(STRSTARTS(STR(?typeEntite), "http://rdf.insee.fr/def/geo#"))
+                BIND(CONCAT(STR(?suppr)," ",STR(?codeSupp), " ",STR(?nomSupp)) AS ?texteSupp ) 
+            }
+            GROUP BY ?uri
+        }
+        BIND(IF(BOUND(?added_entities_count_temp), ?added_entities_count_temp, "0"^^xsd:integer) AS  ?added_entities_count)
+        BIND(IF(BOUND(?removed_entities_count_temp), ?removed_entities_count_temp, "0"^^xsd:integer ) AS  ?removed_entities_count)
+        FILTER (?added_entities_count >0 || ?removed_entities_count >0) .
+        FILTER (?date >= "1943-01-01"^^xsd:date)
+}
+ORDER BY ?date

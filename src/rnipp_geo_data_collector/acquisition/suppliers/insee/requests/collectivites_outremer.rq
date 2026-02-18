@@ -1,0 +1,30 @@
+PREFIX igeo: <http://rdf.insee.fr/def/geo#>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema>
+
+SELECT ?uri ?insee_code ?label ?article_code ?start_date ?end_date ?start_date_count ?end_date_count
+WHERE {
+    ?uri a igeo:CollectiviteDOutreMer .
+    ?uri igeo:codeINSEE ?insee_code .
+    ?uri igeo:nom ?label .
+    OPTIONAL {?uri igeo:codeArticle ?article_code .} .
+    OPTIONAL {
+        SELECT ?uri (GROUP_CONCAT(DISTINCT STR(?dateCrea); SEPARATOR=",") AS ?start_date) (COUNT(DISTINCT ?dateCrea) AS ?start_date_count_temp)
+        WHERE {
+            ?URIEvt a igeo:EvenementGeographique .
+            ?URIEvt igeo:creation ?uri .
+            ?URIEvt igeo:date ?dateCrea
+        }
+        GROUP BY ?uri
+    }
+    OPTIONAL {
+        SELECT ?uri (GROUP_CONCAT(DISTINCT STR(?dateSupp); SEPARATOR=",") AS ?end_date) (COUNT(DISTINCT ?dateSupp) AS ?end_date_count_temp)
+        WHERE {
+            ?URIEvt a igeo:EvenementGeographique .
+            ?URIEvt igeo:suppression ?uri .
+            ?URIEvt igeo:date ?dateSupp
+        }
+        GROUP BY ?uri
+    }
+    BIND(IF(BOUND(?start_date_count_temp), ?start_date_count_temp, "0"^^xsd:integer ) AS  ?start_date_count)
+    BIND(IF(BOUND(?end_date_count_temp), ?end_date_count_temp, "0"^^xsd:integer ) AS  ?end_date_count)
+}
