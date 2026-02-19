@@ -44,7 +44,7 @@ class CheckInseeCodeAfterDownloadInseeCog(DataValidationAndConsistencyInseeCog):
 
         output_path: Path = request.output_path_after_checks if isinstance(request.output_path_after_checks, Path) else Path(request.output_path_after_checks)
         output_path_tmp = Path(output_path).with_suffix(".tmp")
-    
+        
         
         context: dict[str, str] = {
             "modif_insee_code_sql": modif_insee_code_sql,

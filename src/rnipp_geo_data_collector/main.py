@@ -27,7 +27,7 @@ def collect_geo_data(
     logging.info("Setting up working directory")
     working_directory_path = Path('.')
     if working_directory is None:
-        working_directory_path =  Path.cwd() / "geo_data"
+        working_directory_path =  Path.cwd() / "output"
     elif isinstance(working_directory, str):
         working_directory_path = Path(working_directory)
     else:

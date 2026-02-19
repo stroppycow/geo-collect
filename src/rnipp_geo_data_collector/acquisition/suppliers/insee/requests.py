@@ -19,6 +19,7 @@ from .checks.start_date import CheckStartDateAfterDownloadInseeCog
 from .checks.end_date import CheckEndDateAfterDownloadInseeCog
 from .checks.uri_format import CheckURIAfterDownloadInseeCog
 from .checks.uri_unicity import CheckURIUnicityAfterDownloadInseeCog
+from .checks.parent_unicity import CheckParentUnicityAfterDownloadInseeCog
 
 
 class RequestCOG(ABC):
@@ -206,7 +207,8 @@ class RequestCOGArrondissementMunicipal(RequestCOG):
                 CheckStartDateAfterDownloadInseeCog(start_date_exceptions=exceptions_handler_config.start_date),
                 CheckEndDateAfterDownloadInseeCog(end_date_exceptions=exceptions_handler_config.end_date),
                 CheckDateConsistencyAfterDownloadInseeCog(date_consistency_exceptions=exceptions_handler_config.date_consistency),
-                CheckInseeCodeOverlapAfterDownloadInseeCog(insee_code_overlap_exceptions=exceptions_handler_config.insee_code_overlap)
+                CheckInseeCodeOverlapAfterDownloadInseeCog(insee_code_overlap_exceptions=exceptions_handler_config.insee_code_overlap),
+                CheckParentUnicityAfterDownloadInseeCog(parent_unicity_exceptions=exceptions_handler_config.parent_unicity, parent_field_name="insee_codes_communes_parent", count_field_name="insee_codes_communes_parent_count")
             ]
         )
 
@@ -273,7 +275,7 @@ class RequestsCOGCollectivitesOutremer(RequestCOG):
                 CheckStartDateAfterDownloadInseeCog(start_date_exceptions=exceptions_handler_config.start_date),
                 CheckEndDateAfterDownloadInseeCog(end_date_exceptions=exceptions_handler_config.end_date),
                 CheckDateConsistencyAfterDownloadInseeCog(date_consistency_exceptions=exceptions_handler_config.date_consistency),
-                CheckInseeCodeOverlapAfterDownloadInseeCog(insee_code_overlap_exceptions=exceptions_handler_config.insee_code_overlap)
+                CheckInseeCodeOverlapAfterDownloadInseeCog(insee_code_overlap_exceptions=exceptions_handler_config.insee_code_overlap)                
             ]
         )
 

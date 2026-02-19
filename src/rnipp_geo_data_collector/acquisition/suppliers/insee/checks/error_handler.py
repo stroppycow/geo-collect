@@ -55,3 +55,10 @@ class ErrorHandlerReplaceBadInseeCodeOverlapAfterDownloadInseeCog(BaseModel):
     insee_code: str
     start_date: datetime.date
     end_date: datetime.date
+
+class ErrorHandlerRemoveParentDuplicatedAfterDownloadInseeCog(BaseModel):
+    uri: str
+
+class ErrorHandlerReplaceParentDuplicatedAfterDownloadInseeCog(BaseModel):
+    uri: str
+    parent_code: str

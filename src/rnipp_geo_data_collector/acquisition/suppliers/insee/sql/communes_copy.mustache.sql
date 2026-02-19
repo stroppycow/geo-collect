@@ -4,10 +4,14 @@ COPY (
         insee_code,
         label,
         article_code,
-        depatement_insee_code,
+        parent_arrondissement_uri,
+        parent_departement_uri,
+        parent_com_uri,
         start_date,
         end_date,
-        depatement_insee_code_count,
+        parent_arrondissement_count,
+        parent_departement_count,
+        parent_com_count,
         start_date_count,
         end_date_count
     FROM read_csv(
@@ -19,10 +23,14 @@ COPY (
             'insee_code': 'VARCHAR',
             'label': 'VARCHAR',
             'article_code': 'VARCHAR',
-            'depatement_insee_code': 'VARCHAR',
+            'parent_arrondissement_uri': 'VARCHAR',
+            'parent_departement_uri': 'VARCHAR',
+            'parent_com_uri': 'VARCHAR',
             'start_date': 'DATE',
             'end_date': 'DATE',
-            'depatement_insee_code_count': 'INTEGER',
+            'parent_arrondissement_count': 'INTEGER',
+            'parent_departement_count': 'INTEGER',
+            'parent_com_count': 'INTEGER',
             'start_date_count': 'INTEGER',
             'end_date_count': 'INTEGER'
         }
