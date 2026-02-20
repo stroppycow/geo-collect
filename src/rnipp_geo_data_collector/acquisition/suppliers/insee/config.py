@@ -12,6 +12,8 @@ from .checks.error_handler import ErrorHandlerRemoveCheckURIAfterDownloadInseeCo
 from .checks.error_handler import ErrorHandlerRemoveDuplicatedURIAfterDownloadInseeCog
 from .checks.error_handler import ErrorHandlerRemoveParentDuplicatedAfterDownloadInseeCog, ErrorHandlerReplaceParentDuplicatedAfterDownloadInseeCog
 
+from .checks.apply_update import InseeCommuneAddOrReplace, InseeArrondissementMunicipalAddOrReplace, InseeCollectiviteDOutreMerAddOrReplace, InseeDistrictAddOrReplace, PaysInseeAddOrReplace, InseeGeoRemove
+
 def check_unique_uri(uris: List[str]):
     counter = Counter(uris)
     duplicates = [id_ for id_, count in counter.items() if count > 1]
@@ -98,61 +100,49 @@ class ParentUnicityInseeExceptionsToIgnoreOrCorrect(RootModel):
         return self
 
 
-class CommunesInseeExceptionsToIgnoreOrCorrect(InseeExceptionsToIgnoreOrCorrectModel):
-    uri_format: URIFormatInseeExceptionsToIgnoreOrCorrect = URIFormatInseeExceptionsToIgnoreOrCorrect()
-    uri_unicity: URIsUnicityInseeExceptionsToIgnoreOrCorrect = URIsUnicityInseeExceptionsToIgnoreOrCorrect()
-    article_code: ArticleCodeInseeExceptionsToIgnoreOrCorrect = ArticleCodeInseeExceptionsToIgnoreOrCorrect()
-    insee_code: InseeCodeInseeExceptionsToIgnoreOrCorrect = InseeCodeInseeExceptionsToIgnoreOrCorrect()
-    start_date: StartDateInseeExceptionsToIgnoreOrCorrect = StartDateInseeExceptionsToIgnoreOrCorrect()
-    end_date: EndDateInseeExceptionsToIgnoreOrCorrect = EndDateInseeExceptionsToIgnoreOrCorrect()
-    date_consistency: DateConsistencyInseeExceptionsToIgnoreOrCorrect = DateConsistencyInseeExceptionsToIgnoreOrCorrect()
-    insee_code_overlap: InseeCodeOverlapInseeExceptionsToIgnoreOrCorrect = InseeCodeOverlapInseeExceptionsToIgnoreOrCorrect()
-    parent_unicity: ParentUnicityInseeExceptionsToIgnoreOrCorrect = ParentUnicityInseeExceptionsToIgnoreOrCorrect()
+class CommunesInseeExceptionsToIgnoreOrCorrect(RootModel):
+    root: list[Union[InseeCommuneAddOrReplace, InseeGeoRemove]] = []
 
-class ArrondissementsMunicipauxInseeExceptionsToIgnoreOrCorrect(InseeExceptionsToIgnoreOrCorrectModel):
-    uri_format: URIFormatInseeExceptionsToIgnoreOrCorrect = URIFormatInseeExceptionsToIgnoreOrCorrect()
-    uri_unicity: URIsUnicityInseeExceptionsToIgnoreOrCorrect = URIsUnicityInseeExceptionsToIgnoreOrCorrect()
-    article_code: ArticleCodeInseeExceptionsToIgnoreOrCorrect = ArticleCodeInseeExceptionsToIgnoreOrCorrect()
-    insee_code: InseeCodeInseeExceptionsToIgnoreOrCorrect = InseeCodeInseeExceptionsToIgnoreOrCorrect()
-    start_date: StartDateInseeExceptionsToIgnoreOrCorrect = StartDateInseeExceptionsToIgnoreOrCorrect()
-    end_date: EndDateInseeExceptionsToIgnoreOrCorrect = EndDateInseeExceptionsToIgnoreOrCorrect()
-    date_consistency: DateConsistencyInseeExceptionsToIgnoreOrCorrect = DateConsistencyInseeExceptionsToIgnoreOrCorrect()
-    insee_code_overlap: InseeCodeOverlapInseeExceptionsToIgnoreOrCorrect = InseeCodeOverlapInseeExceptionsToIgnoreOrCorrect()
-    parent_unicity: ParentUnicityInseeExceptionsToIgnoreOrCorrect = ParentUnicityInseeExceptionsToIgnoreOrCorrect()
+    @model_validator(mode="after")
+    def unique_uri(self):
+        check_unique_uri([item.uri for item in self.root])
+        return self
 
-class CollectivitesDOutreMerInseeExceptionsToIgnoreOrCorrect(InseeExceptionsToIgnoreOrCorrectModel):
-    uri_format: URIFormatInseeExceptionsToIgnoreOrCorrect = URIFormatInseeExceptionsToIgnoreOrCorrect()
-    uri_unicity: URIsUnicityInseeExceptionsToIgnoreOrCorrect = URIsUnicityInseeExceptionsToIgnoreOrCorrect()
-    article_code: ArticleCodeInseeExceptionsToIgnoreOrCorrect = ArticleCodeInseeExceptionsToIgnoreOrCorrect()
-    insee_code: InseeCodeInseeExceptionsToIgnoreOrCorrect = InseeCodeInseeExceptionsToIgnoreOrCorrect()
-    start_date: StartDateInseeExceptionsToIgnoreOrCorrect = StartDateInseeExceptionsToIgnoreOrCorrect()
-    end_date: EndDateInseeExceptionsToIgnoreOrCorrect = EndDateInseeExceptionsToIgnoreOrCorrect()
-    date_consistency: DateConsistencyInseeExceptionsToIgnoreOrCorrect = DateConsistencyInseeExceptionsToIgnoreOrCorrect()
-    insee_code_overlap: InseeCodeOverlapInseeExceptionsToIgnoreOrCorrect = InseeCodeOverlapInseeExceptionsToIgnoreOrCorrect()
 
-class DistrictsInseeExceptionsToIgnoreOrCorrect(InseeExceptionsToIgnoreOrCorrectModel):
-    uri_format: URIFormatInseeExceptionsToIgnoreOrCorrect = URIFormatInseeExceptionsToIgnoreOrCorrect()
-    uri_unicity: URIsUnicityInseeExceptionsToIgnoreOrCorrect = URIsUnicityInseeExceptionsToIgnoreOrCorrect()
-    article_code: ArticleCodeInseeExceptionsToIgnoreOrCorrect = ArticleCodeInseeExceptionsToIgnoreOrCorrect()
-    insee_code: InseeCodeInseeExceptionsToIgnoreOrCorrect = InseeCodeInseeExceptionsToIgnoreOrCorrect()
-    start_date: StartDateInseeExceptionsToIgnoreOrCorrect = StartDateInseeExceptionsToIgnoreOrCorrect()
-    end_date: EndDateInseeExceptionsToIgnoreOrCorrect = EndDateInseeExceptionsToIgnoreOrCorrect()
-    date_consistency: DateConsistencyInseeExceptionsToIgnoreOrCorrect = DateConsistencyInseeExceptionsToIgnoreOrCorrect()
-    insee_code_overlap: InseeCodeOverlapInseeExceptionsToIgnoreOrCorrect = InseeCodeOverlapInseeExceptionsToIgnoreOrCorrect()
+class ArrondissementsMunicipauxInseeExceptionsToIgnoreOrCorrect(RootModel):
+    root: list[Union[InseeArrondissementMunicipalAddOrReplace, InseeGeoRemove]] = []
 
-class PaysInseeExceptionsToIgnoreOrCorrect(InseeExceptionsToIgnoreOrCorrectModel):
-    uri_format: URIFormatInseeExceptionsToIgnoreOrCorrect = URIFormatInseeExceptionsToIgnoreOrCorrect()
-    uri_unicity: URIsUnicityInseeExceptionsToIgnoreOrCorrect = URIsUnicityInseeExceptionsToIgnoreOrCorrect()
-    article_code: ArticleCodeInseeExceptionsToIgnoreOrCorrect = ArticleCodeInseeExceptionsToIgnoreOrCorrect()
-    insee_code: InseeCodeInseeExceptionsToIgnoreOrCorrect = InseeCodeInseeExceptionsToIgnoreOrCorrect()
-    start_date: StartDateInseeExceptionsToIgnoreOrCorrect = StartDateInseeExceptionsToIgnoreOrCorrect()
-    end_date: EndDateInseeExceptionsToIgnoreOrCorrect = EndDateInseeExceptionsToIgnoreOrCorrect()
-    date_consistency: DateConsistencyInseeExceptionsToIgnoreOrCorrect = DateConsistencyInseeExceptionsToIgnoreOrCorrect()
-    insee_code_overlap: InseeCodeOverlapInseeExceptionsToIgnoreOrCorrect = InseeCodeOverlapInseeExceptionsToIgnoreOrCorrect()
+    @model_validator(mode="after")
+    def unique_uri(self):
+        check_unique_uri([item.uri for item in self.root])
+        return self
 
-class EventsInseeExceptionsToIgnoreOrCorrect(InseeExceptionsToIgnoreOrCorrectModel):
-    uri_format: URIFormatInseeExceptionsToIgnoreOrCorrect = URIFormatInseeExceptionsToIgnoreOrCorrect()
-    uri_unicity: URIsUnicityInseeExceptionsToIgnoreOrCorrect = URIsUnicityInseeExceptionsToIgnoreOrCorrect()
+class CollectivitesDOutreMerInseeExceptionsToIgnoreOrCorrect(RootModel):
+    root: list[Union[InseeCollectiviteDOutreMerAddOrReplace, InseeGeoRemove]] = []
+
+    @model_validator(mode="after")
+    def unique_uri(self):
+        check_unique_uri([item.uri for item in self.root])
+        return self
+
+
+class DistrictsInseeExceptionsToIgnoreOrCorrect(RootModel):
+    root: list[Union[InseeDistrictAddOrReplace, InseeGeoRemove]] = []
+
+    @model_validator(mode="after")
+    def unique_uri(self):
+        check_unique_uri([item.uri for item in self.root])
+        return self
+
+
+class PaysInseeExceptionsToIgnoreOrCorrect(RootModel):
+    root: list[Union[PaysInseeAddOrReplace, InseeGeoRemove]] = []
+
+    @model_validator(mode="after")
+    def unique_uri(self):
+        check_unique_uri([item.uri for item in self.root])
+        return self
+
 
 class InseeExceptionsToIgnoreOrCorrect(BaseModel):
     communes: CommunesInseeExceptionsToIgnoreOrCorrect = CommunesInseeExceptionsToIgnoreOrCorrect()
@@ -160,7 +150,6 @@ class InseeExceptionsToIgnoreOrCorrect(BaseModel):
     collectivites_outremer: CollectivitesDOutreMerInseeExceptionsToIgnoreOrCorrect = CollectivitesDOutreMerInseeExceptionsToIgnoreOrCorrect()
     districts: DistrictsInseeExceptionsToIgnoreOrCorrect = DistrictsInseeExceptionsToIgnoreOrCorrect()
     pays: PaysInseeExceptionsToIgnoreOrCorrect = PaysInseeExceptionsToIgnoreOrCorrect()
-    events : EventsInseeExceptionsToIgnoreOrCorrect = EventsInseeExceptionsToIgnoreOrCorrect()
 
 class InseeSupplierConfig(BaseModel):
     endpoint_url: str = "http://rdf.insee.fr/sparql"

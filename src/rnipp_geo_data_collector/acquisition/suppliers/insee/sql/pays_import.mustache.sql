@@ -8,12 +8,14 @@ CREATE OR REPLACE VIEW {{view_name}} AS (
         iso3166alpha2_code,
         iso3166alpha3_code,
         iso3166num_code,
+        start_event_uri,
+        end_event_uri,
         start_date,
         end_date,
         start_date_count,
         end_date_count
     FROM read_csv(
-        '{{path}}',
+        '{{input_path}}',
         delim = ',',
         header = true,
         columns = {
@@ -25,6 +27,8 @@ CREATE OR REPLACE VIEW {{view_name}} AS (
             'iso3166alpha2_code': 'VARCHAR',
             'iso3166alpha3_code': 'VARCHAR',
             'iso3166num_code': 'VARCHAR',
+            'start_event_uri': 'VARCHAR',
+            'end_event_uri': 'VARCHAR',
             'start_date': 'DATE',
             'end_date': 'DATE',
             'start_date_count': 'INTEGER',

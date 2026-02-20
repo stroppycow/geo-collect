@@ -1,7 +1,7 @@
 PREFIX igeo: <http://rdf.insee.fr/def/geo#>
 PREFIX xsd: <http://www.w3.org/2001/XMLSchema>
 
-SELECT ?uri ?insee_code ?label ?article_code ?long_label ?iso3166alpha2_code ?iso3166alpha3_code ?iso3166num_code ?start_date ?end_date ?start_date_count ?end_date_count
+SELECT ?uri ?insee_code ?label ?article_code ?long_label ?iso3166alpha2_code ?iso3166alpha3_code ?iso3166num_code ?start_event_uri ?end_event_uri ?start_date ?end_date ?start_date_count ?end_date_count
 WHERE {
     ?uri a igeo:Pays .
     ?uri igeo:codeINSEE ?insee_code .
@@ -12,20 +12,20 @@ WHERE {
     OPTIONAL {?uri igeo:codeIso3166alpha3 ?iso3166alpha3_code . } .
     OPTIONAL {?uri igeo:codeIso3166num ?iso3166num_code . } .
     OPTIONAL {
-        SELECT ?uri (GROUP_CONCAT(DISTINCT STR(?dateCrea); SEPARATOR=",") AS ?start_date) (COUNT(DISTINCT ?dateCrea) AS ?start_date_count_temp)
+        SELECT ?uri (GROUP_CONCAT(DISTINCT STR(?URIEvt); SEPARATOR="|") AS ?start_event_uri) (GROUP_CONCAT(DISTINCT STR(?dateCrea); SEPARATOR="|") AS ?start_date) (COUNT(DISTINCT ?dateCrea) AS ?start_date_count_temp)
         WHERE {
             ?URIEvt a igeo:EvenementGeographique .
             ?URIEvt igeo:creation ?uri .
-            ?URIEvt igeo:date ?dateCrea
+            OPTIONAL {?URIEvt igeo:date ?dateCrea}
         }
         GROUP BY ?uri
     }
     OPTIONAL {
-        SELECT ?uri (GROUP_CONCAT(DISTINCT STR(?dateSupp); SEPARATOR=",") AS ?end_date) (COUNT(DISTINCT ?dateSupp) AS ?end_date_count_temp)
+        SELECT ?uri  (GROUP_CONCAT(DISTINCT STR(?URIEvt); SEPARATOR="|") AS ?end_event_uri) (GROUP_CONCAT(DISTINCT STR(?dateSupp); SEPARATOR="|") AS ?end_date) (COUNT(DISTINCT ?dateSupp) AS ?end_date_count_temp)
         WHERE {
             ?URIEvt a igeo:EvenementGeographique .
             ?URIEvt igeo:suppression ?uri .
-            ?URIEvt igeo:date ?dateSupp
+            OPTIONAL {?URIEvt igeo:date ?dateSupp}
         }
         GROUP BY ?uri
     }

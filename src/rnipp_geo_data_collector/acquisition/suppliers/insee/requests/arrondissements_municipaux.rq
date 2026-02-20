@@ -1,39 +1,38 @@
 PREFIX igeo: <http://rdf.insee.fr/def/geo#>
 PREFIX xsd: <http://www.w3.org/2001/XMLSchema>
 
-SELECT ?uri ?insee_code ?label ?article_code ?insee_codes_communes_parent ?start_date ?end_date ?insee_codes_communes_parent_count ?start_date_count ?end_date_count
+SELECT ?uri ?insee_code ?label ?article_code ?parent_uri ?start_event_uri ?end_event_uri ?start_date ?end_date ?parent_uri_count ?start_date_count ?end_date_count
 WHERE {
     ?uri a igeo:ArrondissementMunicipal .
     ?uri igeo:codeINSEE ?insee_code .
     ?uri igeo:nom ?label .
     OPTIONAL {?uri igeo:codeArticle ?article_code . } .
     OPTIONAL {
-        SELECT ?uri (GROUP_CONCAT(DISTINCT ?com_code; SEPARATOR=",") AS ?insee_codes_communes_parent) (COUNT(DISTINCT ?com_code) AS ?comptageCodesInseeCommunesParentTemp)
+        SELECT ?uri (GROUP_CONCAT(DISTINCT ?parent_uri; SEPARATOR="|") AS ?parent_uri) (COUNT(DISTINCT ?parent_uri) AS ?parent_uri_count_temp)
         WHERE {
             ?uri igeo:subdivisionDirecteDe ?URISub .
-            ?URISub a igeo:Commune .
-            ?URISub igeo:codeINSEE ?com_code
+            ?parent_uri a igeo:Commune .
         } GROUP BY ?uri
     }
     OPTIONAL {
-        SELECT ?uri (GROUP_CONCAT(DISTINCT STR(?dateCrea); SEPARATOR=",") AS ?start_date) (COUNT(DISTINCT ?dateCrea) AS ?start_date_count_temp)
+        SELECT ?uri (GROUP_CONCAT(DISTINCT STR(?URIEvt); SEPARATOR="|") AS ?start_event_uri) (GROUP_CONCAT(DISTINCT STR(?dateCrea); SEPARATOR="|") AS ?start_date) (COUNT(DISTINCT ?dateCrea) AS ?start_date_count_temp)
         WHERE {
             ?URIEvt a igeo:EvenementGeographique .
             ?URIEvt igeo:creation ?uri .
-            ?URIEvt igeo:date ?dateCrea
+            OPTIONAL {?URIEvt igeo:date ?dateCrea}
         }
         GROUP BY ?uri
     }
     OPTIONAL {
-        SELECT ?uri (GROUP_CONCAT(DISTINCT STR(?dateSupp); SEPARATOR=",") AS ?end_date) (COUNT(DISTINCT ?dateSupp) AS ?end_date_count_temp)
+        SELECT ?uri  (GROUP_CONCAT(DISTINCT STR(?URIEvt); SEPARATOR="|") AS ?end_event_uri) (GROUP_CONCAT(DISTINCT STR(?dateSupp); SEPARATOR="|") AS ?end_date) (COUNT(DISTINCT ?dateSupp) AS ?end_date_count_temp)
         WHERE {
             ?URIEvt a igeo:EvenementGeographique .
             ?URIEvt igeo:suppression ?uri .
-            ?URIEvt igeo:date ?dateSupp
+            OPTIONAL {?URIEvt igeo:date ?dateSupp}
         }
         GROUP BY ?uri
     }
-    BIND(IF(BOUND(?comptageCodesInseeCommunesParentTemp), ?comptageCodesInseeCommunesParentTemp, "0"^^xsd:integer ) AS  ?insee_codes_communes_parent_count)
+    BIND(IF(BOUND(?parent_uri_count_temp), ?parent_uri_count_temp, "0"^^xsd:integer ) AS  ?parent_uri_count)
     BIND(IF(BOUND(?start_date_count_temp), ?start_date_count_temp, "0"^^xsd:integer ) AS  ?start_date_count)
     BIND(IF(BOUND(?end_date_count_temp), ?end_date_count_temp, "0"^^xsd:integer ) AS  ?end_date_count)
 }
