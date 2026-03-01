@@ -11,18 +11,27 @@ from .abstract import DataValidationAndConsistencyInseeCog
 if TYPE_CHECKING:
     from ..requests import RequestCOG
 
-class CheckDateConsistencyAfterDownloadInseeCog(DataValidationAndConsistencyInseeCog):
+class CheckParentURIsExistAfterDownloadInseeCog(DataValidationAndConsistencyInseeCog):
     def __init__(
-            self
+            self,
+            parents_view_name: list[str]
         ):
         super().__init__()
+        if len(parents_view_name) == 0:
+            raise RuntimeError("No parents view name provided")
+
+        self.parents_view_name = parents_view_name
         
     def run(self, request: RequestCOG, duckdb_conn: DuckDBPyConnection) -> bool:
-        """Check if the content of the file is valid for the date consistency"""
-        template_path = Path(__file__).parent.parent / "sql" / "date_consistency_check.mustashe.sql"
-        renderer = pystache.Renderer(escape=lambda s: s) 
+        """Check if parent uris are present in other files"""
+        template_path = Path(__file__).parent.parent / "sql" / "parent_uri_exist_check.mustashe.sql"
+        renderer = pystache.Renderer(escape=lambda s: s)
+
+        sql_import_parent = " UNION ALL ".join([f"SELECT uri as parent_uri FROM {view_name}" for view_name in self.parents_view_name])
+
         context: dict[str, str] = {
-            "view_name": request.view_name
+            "view_name_child": request.view_name,
+            "sql_import_parent": sql_import_parent
         }
 
         try:
@@ -41,13 +50,12 @@ class CheckDateConsistencyAfterDownloadInseeCog(DataValidationAndConsistencyInse
             if len(data_bug) > 0:
                 row_number_bug = data_bug[0][0]
                 uri_bug = data_bug[0][1]
-                start_date_bug = data_bug[0][2]
-                end_date_bug = data_bug[0][3]
-                raise RuntimeError(f"Failed to load {request.description} after downloading. The file may be corrupted or not in the expected format. The start date {start_date_bug} is after the end date {end_date_bug} at row {row_number_bug} for the URI {uri_bug}")
+                parent_uri_bug = data_bug[0][2]
+                raise RuntimeError(f"Bug found in row number {row_number_bug}, uri: {uri_bug}, parent_uri: {parent_uri_bug} for {request.description} : this parent URI is not present in the dedicated table")
 
         except Exception as e:
-            raise RuntimeError(f"Unexpected error while checking date consistency of {request.description} after downloading") from e
+            raise RuntimeError(f"Unexpected error while checking parent URI existence for {request.description}") from e
         
-        logging.info(f"Successfully checked date consistency of {request.description} after downloading")
+        logging.info(f"Successfully checked parent URI existence for {request.description}")
         return True
 

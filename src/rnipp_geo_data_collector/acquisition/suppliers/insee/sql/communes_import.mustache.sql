@@ -13,7 +13,7 @@ CREATE OR REPLACE VIEW {{view_name}} AS (
         start_date_count,
         end_date_count
     FROM read_csv(
-        '{{input_path}}',
+        '{{path}}',
         delim = ',',
         header = true,
         columns = {

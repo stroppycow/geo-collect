@@ -1,6 +1,6 @@
 from __future__ import annotations
 from duckdb import DuckDBPyConnection
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 from abc import ABC, abstractmethod
 
 
@@ -13,10 +13,13 @@ class DataValidationAndConsistencyInseeCog(ABC):
         pass
 
     @abstractmethod
-    def handle_exceptions(self, request: RequestCOG, duckdb_conn: DuckDBPyConnection):
+    def run(self, request: RequestCOG, duckdb_conn: DuckDBPyConnection) -> bool:
+        pass
+
+class GlobalDataConsistencyInseeCog(ABC):
+    def __init__(self):
         pass
 
     @abstractmethod
-    def run(self, request: RequestCOG, duckdb_conn: DuckDBPyConnection, allow_exceptions: bool = False) -> bool:
+    def run(self, requests: list[RequestCOG], duckdb_conn: DuckDBPyConnection) -> bool:
         pass
-

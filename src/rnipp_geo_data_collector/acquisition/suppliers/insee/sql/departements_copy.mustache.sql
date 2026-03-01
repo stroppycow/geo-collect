@@ -1,13 +1,9 @@
-CREATE OR REPLACE VIEW {{view_name}} AS (
+COPY (
     SELECT
         uri,
         insee_code,
         label,
         article_code,
-        long_label,
-        iso3166alpha2_code,
-        iso3166alpha3_code,
-        iso3166num_code,
         start_event_uri,
         end_event_uri,
         start_date,
@@ -15,7 +11,7 @@ CREATE OR REPLACE VIEW {{view_name}} AS (
         start_date_count,
         end_date_count
     FROM read_csv(
-        '{{path}}',
+        '{{input_path}}',
         delim = ',',
         header = true,
         columns = {
@@ -23,10 +19,6 @@ CREATE OR REPLACE VIEW {{view_name}} AS (
             'insee_code': 'VARCHAR',
             'label': 'VARCHAR',
             'article_code': 'VARCHAR',
-            'long_label': 'VARCHAR',
-            'iso3166alpha2_code': 'VARCHAR',
-            'iso3166alpha3_code': 'VARCHAR',
-            'iso3166num_code': 'VARCHAR',
             'start_event_uri': 'VARCHAR',
             'end_event_uri': 'VARCHAR',
             'start_date': 'DATE',
@@ -35,4 +27,5 @@ CREATE OR REPLACE VIEW {{view_name}} AS (
             'end_date_count': 'INTEGER'
         }
     )
-) ;
+) TO '{{output_path}}' (FORMAT CSV, HEADER TRUE) ;
+

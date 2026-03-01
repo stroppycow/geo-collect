@@ -1,10 +1,12 @@
 from pydantic import BaseModel
+from pydantic_settings import SettingsConfigDict
 from pathlib import Path
 from typing import Union
 import json
 
+
 from .suppliers.insee.config import InseeSupplierConfig, InseeExceptionsToIgnoreOrCorrect
-from .suppliers.laposte import LaPosteSupplierConfig
+from .suppliers.laposte.config import LaPosteSupplierConfig, LaPosteExceptionsToIgnoreOrCorrect
 from .suppliers.wikidata import WikidataSupplierConfig
 
 class AcquisitionConfig(BaseModel):
@@ -12,10 +14,11 @@ class AcquisitionConfig(BaseModel):
     laposte: LaPosteSupplierConfig = LaPosteSupplierConfig()
     wikidata: WikidataSupplierConfig = WikidataSupplierConfig()
 
-    model_config = {
-        "env_prefix": "GEOCOLLECT_",
-        "env_nested_delimiter": "__"
-    }
+    model_config = SettingsConfigDict(
+        env_prefix="GEOCOLLECT_",
+        env_nested_delimiter="__"
+    )
+        
 
     @classmethod
     def from_file(cls, file_path: Union[str, Path]) -> "AcquisitionConfig":
@@ -58,6 +61,7 @@ class AcquisitionConfig(BaseModel):
 
 class ErrorHandlerConfig(BaseModel):
     insee: InseeExceptionsToIgnoreOrCorrect = InseeExceptionsToIgnoreOrCorrect()
+    laposte: LaPosteExceptionsToIgnoreOrCorrect = LaPosteExceptionsToIgnoreOrCorrect()
 
 
     @classmethod

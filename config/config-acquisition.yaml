@@ -3,7 +3,7 @@ insee:
   backoff_factor: 0.5
   max_retries: 5
   connect_timeout: 3
-  read_timeout: 15
+  read_timeout: 25
 laposte:
   endpoint_url: "https://datanova.laposte.fr/data-fair/api/v1/datasets/laposte-hexasmal/raw"
   backoff_factor: 0.5

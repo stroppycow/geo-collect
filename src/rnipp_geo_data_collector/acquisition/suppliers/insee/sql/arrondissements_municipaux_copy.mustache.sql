@@ -13,7 +13,7 @@ COPY (
         start_date_count,
         end_date_count
     FROM read_csv(
-        '{{path}}',
+        '{{input_path}}',
         delim = ',',
         header = true,
         columns = {

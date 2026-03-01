@@ -1,22 +1,21 @@
 from __future__ import annotations
 
 from pathlib import Path
-import logging
 import pystache
 from duckdb import DuckDBPyConnection
 from typing import TYPE_CHECKING
 
-from .abstract import DataValidationAndConsistencyInseeCog
+from .abstract import DataValidationAndConsistencyLaPosteHexasmal
 
 if TYPE_CHECKING:
-    from ..requests import RequestCOG
+    from ..requests import RequestLaPosteHexasmal
 
 
-class CheckParsingAfterDownloadInseeCog(DataValidationAndConsistencyInseeCog):
+class CheckParsingAfterDownloadLaPosteHexasmal(DataValidationAndConsistencyLaPosteHexasmal):
     def __init__(self):
         super().__init__()
 
-    def copy(self, request: RequestCOG, duckdb_conn: DuckDBPyConnection):
+    def copy(self, request: RequestLaPosteHexasmal, duckdb_conn: DuckDBPyConnection):
         if not request.output_paths.cleaned_entities.parent.exists():
             request.output_paths.cleaned_entities.parent.mkdir(parents=True, exist_ok=True)
         
@@ -42,9 +41,9 @@ class CheckParsingAfterDownloadInseeCog(DataValidationAndConsistencyInseeCog):
         try:
             duckdb_conn.execute(rendered_str_copy)
         except Exception as e:
-            raise RuntimeError(f"Failed to copy {request.description} after downloading. The file may be corrupted or not in the expected format.") from e
+            raise RuntimeError(f"Failed to copy La Poste Hexasmal data after downloading. The file may be corrupted or not in the expected format.") from e
 
-    def create_view(self, request: RequestCOG, duckdb_conn: DuckDBPyConnection):       
+    def create_view(self, request: RequestLaPosteHexasmal, duckdb_conn: DuckDBPyConnection):       
         renderer_import = pystache.Renderer(escape=lambda s: s)
         context_import: dict[str, str] = {
             "view_name": request.view_name,
@@ -64,10 +63,10 @@ class CheckParsingAfterDownloadInseeCog(DataValidationAndConsistencyInseeCog):
         try:
             duckdb_conn.execute(rendered_str_import)
         except Exception as e:
-            raise RuntimeError(f"Failed to load {request.description} after downloading. The file may be corrupted or not in the expected format.") from e
+            raise RuntimeError(f"Failed to load La Poste Hexasmal data after downloading. The file may be corrupted or not in the expected format.") from e
 
    
-    def run(self, request: RequestCOG, duckdb_conn: DuckDBPyConnection) -> bool:
+    def run(self, request: RequestLaPosteHexasmal, duckdb_conn: DuckDBPyConnection) -> bool:
         """Check if the content of the file is valid after downloading"""
         self.copy(request=request, duckdb_conn=duckdb_conn)
         self.create_view(request=request, duckdb_conn=duckdb_conn)

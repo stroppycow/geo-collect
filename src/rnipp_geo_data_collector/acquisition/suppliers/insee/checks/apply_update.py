@@ -1,5 +1,5 @@
 import datetime
-from typing import Optional
+from typing import Any, Optional
 from pydantic import BaseModel, model_validator
 import validators
 import re
@@ -12,10 +12,6 @@ def check_uri(uri: str):
 def check_insee_code(insee_code: str):
     if re.fullmatch(pattern = r"[0-9A-Za-z]*", string=insee_code) is None:
         raise ValueError(f"Invalid Insee code: {insee_code}")
-
-def check_article_code(article_code: str):
-    if re.fullmatch(pattern = r"[0-9A-Za-z]*", string=article_code) is None:
-        raise ValueError(f"Invalid Article code: {article_code}")
     
 def check_article_code(article_code: str):
     if re.fullmatch(pattern = r"[0-9A-Za-z]*", string=article_code) is None:
@@ -27,8 +23,14 @@ def check_uri_list(uris: str):
     for uri in uris.split("|"):
         check_uri(uri=uri)
 
+class InseeGeoAddOrReplace(BaseModel):
+    pass
 
-class InseeCommuneAddOrReplace(BaseModel):
+    def to_dict_csv_export(self) -> dict[str, Any]:
+        return {}
+
+
+class InseeCommuneAddOrReplace(InseeGeoAddOrReplace):
     uri : str
     insee_code : str
     label: str
@@ -83,15 +85,31 @@ class InseeCommuneAddOrReplace(BaseModel):
         if self.end_date is not None and self.end_event_uri is None:
             raise ValueError("end_event_uri must be provided if end_date is provided")
         return self
+    
+    def to_dict_csv_export(self) -> dict[str, Any]:
+        return {
+            'uri': self.uri,
+            'insee_code': self.insee_code,
+            'label': self.label,
+            'article_code': self.article_code,
+            'parent_uri': self.parent_uri,
+            'start_event_uri': self.start_event_uri,
+            'end_event_uri': self.end_event_uri,
+            'start_date': self.start_date.isoformat(),
+            'end_date': self.end_date.isoformat() if isinstance(self.end_date, datetime.date) else None,
+            'parent_uri_count': len(self.parent_uri.split('|')),
+            'start_date_count': 1,
+            'end_date_count': 1 if isinstance(self.end_date, datetime.date) else 0 
+        }
 
-class InseeArrondissementMunicipalAddOrReplace(BaseModel):
+class InseeArrondissementMunicipalAddOrReplace(InseeGeoAddOrReplace):
     uri : str
     insee_code : str
     label: str
     article_code: str
     parent_uri: str
     start_event_uri: str
-    end_event_uri: str
+    end_event_uri: Optional[str] = None
     start_date: datetime.date
     end_date: Optional[datetime.date] = None
 
@@ -139,15 +157,31 @@ class InseeArrondissementMunicipalAddOrReplace(BaseModel):
         if self.end_date is not None and self.end_event_uri is None:
             raise ValueError("end_event_uri must be provided if end_date is provided")
         return self
+    
+    def to_dict_csv_export(self) -> dict[str, Any]:
+        return {
+            'uri': self.uri,
+            'insee_code': self.insee_code,
+            'label': self.label,
+            'article_code': self.article_code,
+            'parent_uri': self.parent_uri,
+            'start_event_uri': self.start_event_uri,
+            'end_event_uri': self.end_event_uri,
+            'start_date': self.start_date.isoformat(),
+            'end_date': self.end_date.isoformat() if isinstance(self.end_date, datetime.date) else None,
+            'parent_uri_count': len(self.parent_uri.split('|')),
+            'start_date_count': 1,
+            'end_date_count': 1 if isinstance(self.end_date, datetime.date) else 0 
+        }
 
 
-class InseeDepartementAddOrReplace(BaseModel):
+class InseeDepartementAddOrReplace(InseeGeoAddOrReplace):
     uri : str
     insee_code : str
     label: str
     article_code: str
     start_event_uri: str
-    end_event_uri: str
+    end_event_uri: Optional[str] = None
     start_date: datetime.date
     end_date: Optional[datetime.date] = None
 
@@ -190,14 +224,28 @@ class InseeDepartementAddOrReplace(BaseModel):
         if self.end_date is not None and self.end_event_uri is None:
             raise ValueError("end_event_uri must be provided if end_date is provided")
         return self
+    
+    def to_dict_csv_export(self) -> dict[str, Any]:
+        return {
+            'uri': self.uri,
+            'insee_code': self.insee_code,
+            'label': self.label,
+            'article_code': self.article_code,
+            'start_event_uri': self.start_event_uri,
+            'end_event_uri': self.end_event_uri,
+            'start_date': self.start_date.isoformat(),
+            'end_date': self.end_date.isoformat() if isinstance(self.end_date, datetime.date) else None,
+            'start_date_count': 1,
+            'end_date_count': 1 if isinstance(self.end_date, datetime.date) else 0 
+        }
 
-class InseeDistrictAddOrReplace(BaseModel):
+class InseeDistrictAddOrReplace(InseeGeoAddOrReplace):
     uri : str
     insee_code : str
     label: str
     article_code: str
     start_event_uri: str
-    end_event_uri: str
+    end_event_uri: Optional[str] = None
     start_date: datetime.date
     end_date: Optional[datetime.date] = None
 
@@ -240,14 +288,28 @@ class InseeDistrictAddOrReplace(BaseModel):
         if self.end_date is not None and self.end_event_uri is None:
             raise ValueError("end_event_uri must be provided if end_date is provided")
         return self
+    
+    def to_dict_csv_export(self) -> dict[str, Any]:
+        return {
+            'uri': self.uri,
+            'insee_code': self.insee_code,
+            'label': self.label,
+            'article_code': self.article_code,
+            'start_event_uri': self.start_event_uri,
+            'end_event_uri': self.end_event_uri,
+            'start_date': self.start_date.isoformat(),
+            'end_date': self.end_date.isoformat() if isinstance(self.end_date, datetime.date) else None,
+            'start_date_count': 1,
+            'end_date_count': 1 if isinstance(self.end_date, datetime.date) else 0 
+        }
 
-class InseeCollectiviteOutremerAddOrReplace(BaseModel):
+class InseeCollectiviteOutremerAddOrReplace(InseeGeoAddOrReplace):
     uri : str
     insee_code : str
     label: str
     article_code: str
     start_event_uri: str
-    end_event_uri: str
+    end_event_uri: Optional[str] = None
     start_date: datetime.date
     end_date: Optional[datetime.date] = None
 
@@ -290,18 +352,32 @@ class InseeCollectiviteOutremerAddOrReplace(BaseModel):
         if self.end_date is not None and self.end_event_uri is None:
             raise ValueError("end_event_uri must be provided if end_date is provided")
         return self
+    
+    def to_dict_csv_export(self) -> dict[str, Any]:
+        return {
+            'uri': self.uri,
+            'insee_code': self.insee_code,
+            'label': self.label,
+            'article_code': self.article_code,
+            'start_event_uri': self.start_event_uri,
+            'end_event_uri': self.end_event_uri,
+            'start_date': self.start_date.isoformat(),
+            'end_date': self.end_date.isoformat() if isinstance(self.end_date, datetime.date) else None,
+            'start_date_count': 1,
+            'end_date_count': 1 if isinstance(self.end_date, datetime.date) else 0 
+        }
 
-class InseePaysAddOrReplace(BaseModel):
+class InseePaysAddOrReplace(InseeGeoAddOrReplace):
     uri : str
     insee_code : str
     label: str
     article_code: str
     long_label: str
-    iso3166alpha2_code: str
-    iso3166alpha3_code: str
-    iso3166num_code: str
+    iso3166alpha2_code: Optional[str]
+    iso3166alpha3_code: Optional[str]
+    iso3166num_code: Optional[str]
     start_event_uri: str
-    end_event_uri: str
+    end_event_uri: Optional[str] = None
     start_date: datetime.date
     end_date: Optional[datetime.date] = None
 
@@ -344,6 +420,24 @@ class InseePaysAddOrReplace(BaseModel):
         if self.end_date is not None and self.end_event_uri is None:
             raise ValueError("end_event_uri must be provided if end_date is provided")
         return self
+    
+    def to_dict_csv_export(self) -> dict[str, Any]:
+        return {
+            'uri': self.uri,
+            'insee_code': self.insee_code,
+            'label': self.label,
+            'article_code': self.article_code,
+            'long_label': self.long_label,
+            'iso3166alpha2_code': self.iso3166alpha2_code,
+            'iso3166alpha3_code': self.iso3166alpha3_code,
+            'iso3166num_code': self.iso3166num_code,
+            'start_event_uri': self.start_event_uri,
+            'end_event_uri': self.end_event_uri,
+            'start_date': self.start_date.isoformat(),
+            'end_date': self.end_date.isoformat() if isinstance(self.end_date, datetime.date) else None,
+            'start_date_count': 1,
+            'end_date_count': 1 if isinstance(self.end_date, datetime.date) else 0 
+        }
 
 class InseeGeoRemove(BaseModel):
     uri : str

@@ -25,6 +25,6 @@ WHERE {
         }
         GROUP BY ?uri
     }
-    BIND(IF(BOUND(?start_date_countTemp), ?start_date_countTemp, "0"^^xsd:integer ) AS  ?start_date_count)
+    BIND(IF(BOUND(?start_date_count_temp), ?start_date_count_temp, "0"^^xsd:integer ) AS  ?start_date_count)
     BIND(IF(BOUND(?end_date_count_temp), ?end_date_count_temp, "0"^^xsd:integer ) AS  ?end_date_count)
 }
