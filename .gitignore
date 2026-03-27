@@ -54,6 +54,7 @@ venv.bak/
 # Jupyter Notebook
 # =========================
 .ipynb_checkpoints/
+*.ipynb
 
 # =========================
 # Testing / coverage

@@ -43,3 +43,7 @@ include = ["rnipp_geo_data_collector*"]
 
 [project.scripts]
 geo_data_collector = "rnipp_geo_data_collector.cli:app"
+[dependency-groups]
+dev = [
+    "ipykernel (>=7.2.0,<8.0.0)"
+]
