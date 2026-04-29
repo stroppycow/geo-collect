@@ -1,12 +1,21 @@
 PREFIX igeo: <http://rdf.insee.fr/def/geo#>
 PREFIX xsd: <http://www.w3.org/2001/XMLSchema>
 
-SELECT ?uri ?insee_code ?label ?article_code ?start_event_uri ?end_event_uri ?start_date ?end_date ?start_date_count ?end_date_count
+SELECT ?uri ?insee_code ?label ?article_code ?is_france_metropolitaine ?start_event_uri ?end_event_uri ?start_date ?end_date ?start_date_count ?end_date_count
 WHERE {
     ?uri a igeo:Departement .
     ?uri igeo:codeINSEE ?insee_code .
     ?uri igeo:nom ?label .
     OPTIONAL {?uri igeo:codeArticle ?article_code .} .
+  	OPTIONAL {
+        SELECT ?uri (COUNT(DISTINCT ?uri_region) AS ?count_uri_region_metro_temp)
+        WHERE {
+            ?uri igeo:subdivisionDirecteDe ?uri_region .
+            ?uri_region a igeo:Region .
+            ?uri_region igeo:subdivisionDirecteDe <http://id.insee.fr/geo/territoireFrancais/franceMetropolitaine>
+        }
+        GROUP BY ?uri
+    }
     OPTIONAL {
         SELECT ?uri (GROUP_CONCAT(DISTINCT STR(?URIEvt); SEPARATOR="|") AS ?start_event_uri) (GROUP_CONCAT(DISTINCT STR(?dateCrea); SEPARATOR="|") AS ?start_date) (COUNT(DISTINCT ?dateCrea) AS ?start_date_count_temp)
         WHERE {
@@ -27,4 +36,7 @@ WHERE {
     }
     BIND(IF(BOUND(?start_date_count_temp), ?start_date_count_temp, "0"^^xsd:integer ) AS  ?start_date_count)
     BIND(IF(BOUND(?end_date_count_temp), ?end_date_count_temp, "0"^^xsd:integer ) AS  ?end_date_count)
+    BIND(BOUND(?count_uri_region_metro_temp) AS  ?is_france_metropolitaine)
+
 }
+

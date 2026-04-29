@@ -6,7 +6,13 @@ import logging
 
 from .acquisition.config import AcquisitionConfig, ErrorHandlerConfig
 from .acquisition.download import download_geo_data
+from .processings.metropolitan_france_dummy_correction import correct_metropolitan_france_dummy
+from .processings.communes_typology import typologize_communes
+from .processings.postal_codes_merge import merge_postal_codes
+
 from .utils.duckdb import init_duckdb_connection
+from .metadata import InfoCurrentStoredData
+
 
 def collect_geo_data(
     acquisition_config_file: Union[None, str, Path] = None,
@@ -66,19 +72,54 @@ def collect_geo_data(
         logging.info(f"Loading exceptions handler config from {exceptions_handler_config_file}")
         exceptions_handler_config = ErrorHandlerConfig.from_file(exceptions_handler_config_file)
 
+    current_stored_data = InfoCurrentStoredData()
     # Download geo data
     try:
         download_geo_data(
             acquisition_config = acquisition_config,
             exceptions_handler_config = exceptions_handler_config,
             duckdb_conn = duckdb_connection,
-            output_dir = working_directory_path / 'download'
+            output_dir = working_directory_path / 'download',
+            current_stored_data = current_stored_data
         )
     except Exception as e:
         duckdb_connection.close()
         logging.error(f"Failed to download geo data: {e}")
         raise RuntimeError(f"Failed to download geo data: {e}") from e
-
+    
+    try:
+        correct_metropolitan_france_dummy(
+            duckdb_connection=duckdb_connection,
+            current_stored_data=current_stored_data,
+            output_dir=working_directory_path / '01_processing'
+        )
+    except Exception as e:
+        duckdb_connection.close()
+        logging.error(f"Failed to correct Metropolitan France dummy variable")
+        raise RuntimeError(f"Failed to correct Metropolitan France dummy variable: {e}") from e
+    
+    try:
+        typologize_communes(
+            duckdb_connection=duckdb_connection,
+            current_stored_data=current_stored_data,
+            output_dir=working_directory_path / '02_processing'
+        )
+    except Exception as e:
+        duckdb_connection.close()
+        logging.error(f"Failed to typologize communes location")
+        raise RuntimeError(f"Failed to typologize communes location: {e}") from e
+    
+    try:
+        merge_postal_codes(
+            duckdb_connection=duckdb_connection,
+            current_stored_data=current_stored_data,
+            output_dir=working_directory_path / '03_processing'
+        )
+    except Exception as e:
+        duckdb_connection.close()
+        logging.error(f"Failed to merge postal codes")
+        raise RuntimeError(f"Failed to merge postal codes: {e}") from e
+    
     try:
         duckdb_connection.close()
     except Exception as e:

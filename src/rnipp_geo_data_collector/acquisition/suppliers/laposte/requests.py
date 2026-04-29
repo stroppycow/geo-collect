@@ -12,6 +12,7 @@ from .config import LaPosteExceptionsToIgnoreOrCorrect, LaPosteSupplierConfig
 from .checks.abstract import DataValidationAndConsistencyLaPosteHexasmal
 from .checks.parsing import CheckParsingAfterDownloadLaPosteHexasmal
 from .checks.pattern import CheckPatternAfterDownloadLaPosteHexasmal
+from ....metadata import ColumnDataType, StringColumnDataType 
 
 class TemplatesSQLRequestLaPosteHexasmal:
     def __init__(
@@ -78,6 +79,13 @@ class RequestLaPosteHexasmal:
         self.extra_controls = [
             CheckPatternAfterDownloadLaPosteHexasmal(colname="insee_code", pattern=r"^((0[1-9]|[1-8][0-9]|9[0-8]|2[AB])[0-9]{3}|99138)$"),
             CheckPatternAfterDownloadLaPosteHexasmal(colname="postal_code", pattern=r"^[0-9]{5}$")
+        ]
+        self.colnames = [
+            StringColumnDataType(name='insee_code'),
+            StringColumnDataType(name='name'),
+            StringColumnDataType(name='postal_code'),
+            StringColumnDataType(name='delivery_label'),
+            StringColumnDataType(name='associated_name')
         ]
 
     def send(self) -> None:

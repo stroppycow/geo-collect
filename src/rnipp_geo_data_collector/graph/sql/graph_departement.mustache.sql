@@ -1,4 +1,4 @@
-CREATE OR REPLACE VIEW {{view_name}} AS (
+CREATE OR REPLACE VIEW geo_entities_graph AS (
     SELECT
         uri,
         insee_code,
@@ -12,7 +12,7 @@ CREATE OR REPLACE VIEW {{view_name}} AS (
         start_date_count,
         end_date_count
     FROM read_csv(
-        '{{path}}',
+        '{{path_departements}}',
         delim = ',',
         header = true,
         columns = {

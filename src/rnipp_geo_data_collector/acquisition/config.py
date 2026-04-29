@@ -75,7 +75,7 @@ class ErrorHandlerConfig(BaseModel):
 
         if file_path.suffix == '.json':
             try:
-                with open(file_path, 'r') as file:
+                with open(file_path, 'r', encoding='utf-8') as file:
                     config_data = json.load(file)
             except Exception as e:
                 raise ValueError(f"Error loading JSON config file: {e}")
@@ -90,7 +90,7 @@ class ErrorHandlerConfig(BaseModel):
             except ImportError:
                 raise ImportError("PyYAML is required to load YAML config files. Install it with `pip install pyyaml`.")
             try:
-                with open(file_path, 'r') as file:
+                with open(file_path, 'r', encoding='utf-8') as file:
                     config_data = yaml.safe_load(file)
             except Exception as e:
                 raise ValueError(f"Error loading YAML config file: {e}")

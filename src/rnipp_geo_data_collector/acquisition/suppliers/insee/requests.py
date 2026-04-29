@@ -23,6 +23,7 @@ from .checks.uri_unicity import CheckURIUnicityAfterDownloadInseeCog
 from .checks.end_event_consistency import CheckEndEventConsistencyAfterDownloadInseeCog
 from .checks.events_unequal import CheckEventsUnequalAfterDownloadInseeCog
 from .checks.apply_update import InseeGeoRemove, InseeGeoAddOrReplace
+from ....metadata import ColumnDataType, StringColumnDataType, StringListColumnDataType, BooleanColumnDataType, DateColumnDataType, IntegerColumnDataType
 
 
 class TemplatesSQLRequestCOG:
@@ -84,7 +85,7 @@ class RequestCOG(ABC):
             exceptions_handler_config: InseeExceptionsToIgnoreOrCorrectModel,
             sql_templates: TemplatesSQLRequestCOG,
             acquisition_config: InseeSupplierConfig = InseeSupplierConfig(),
-            colnames: list[str] = [],
+            colnames: list[ColumnDataType] = [],
             extra_controls: list[DataValidationAndConsistencyInseeCog] = []
             
         ):
@@ -170,7 +171,7 @@ class RequestCOG(ABC):
             self.output_paths.add_or_replace_entities.unlink()
         
         with open(self.output_paths.add_or_replace_entities, mode="w", newline="", encoding="utf-8") as f_add_or_replace:
-            fieldnames_add_or_replace = self.colnames
+            fieldnames_add_or_replace = [x.name for x in self.colnames]
             writer_add_or_replace = csv.DictWriter(f_add_or_replace, fieldnames=fieldnames_add_or_replace)
             writer_add_or_replace.writeheader()
             for exception in uri_add_or_update_list:
@@ -258,18 +259,18 @@ class RequestCOGCommune(RequestCOG):
                 update=Path(__file__).parent / "sql" / "communes_correct.mustache.sql"
             ),
             colnames=[
-                'uri',
-                'insee_code',
-                'label',
-                'article_code',
-                'parent_uri',
-                'start_event_uri',
-                'end_event_uri',
-                'start_date',
-                'end_date',
-                'parent_uri_count',
-                'start_date_count',
-                'end_date_count'
+                StringColumnDataType(name='uri'),
+                StringColumnDataType(name='insee_code'),
+                StringColumnDataType(name='label'),
+                StringColumnDataType(name='article_code'),
+                StringListColumnDataType(name='parent_uri', sep='|'),
+                StringColumnDataType(name='start_event_uri'),
+                StringColumnDataType(name='end_event_uri'),
+                DateColumnDataType(name='start_date', format='%Y-%m-%d'),
+                DateColumnDataType(name='end_date', format='%Y-%m-%d'),
+                IntegerColumnDataType(name='parent_uri_count'),
+                IntegerColumnDataType(name='start_date_count'),
+                IntegerColumnDataType(name='end_date_count')
             ],
             extra_controls = [
                 CheckPatternAfterDownloadInseeCog(colname="uri", pattern=r"^http://id.insee.fr/geo/commune/[0-9a-z]{8}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{12}$"),
@@ -310,18 +311,18 @@ class RequestCOGArrondissementMunicipal(RequestCOG):
                 update=Path(__file__).parent / "sql" / "arrondissements_municipaux_correct.mustache.sql"
             ),
             colnames=[
-                'uri',
-                'insee_code',
-                'label',
-                'article_code',
-                'parent_uri',
-                'start_event_uri',
-                'end_event_uri',
-                'start_date',
-                'end_date',
-                'parent_uri_count',
-                'start_date_count',
-                'end_date_count'
+                StringColumnDataType(name='uri'),
+                StringColumnDataType(name='insee_code'),
+                StringColumnDataType(name='label'),
+                StringColumnDataType(name='article_code'),
+                StringListColumnDataType(name='parent_uri', sep='|'),
+                StringColumnDataType(name='start_event_uri'),
+                StringColumnDataType(name='end_event_uri'),
+                DateColumnDataType(name='start_date', format='%Y-%m-%d'),
+                DateColumnDataType(name='end_date', format='%Y-%m-%d'),
+                IntegerColumnDataType(name='parent_uri_count'),
+                IntegerColumnDataType(name='start_date_count'),
+                IntegerColumnDataType(name='end_date_count')
             ],
             extra_controls = [
                 CheckPatternAfterDownloadInseeCog(colname="uri", pattern=r"^http://id.insee.fr/geo/arrondissementMunicipal/[0-9a-z]{8}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{12}$"),
@@ -361,16 +362,17 @@ class RequestCOGDepartement(RequestCOG):
                 update=Path(__file__).parent / "sql" / "departements_correct.mustache.sql"
             ),
             colnames=[
-                'uri',
-                'insee_code',
-                'label',
-                'article_code',
-                'start_event_uri',
-                'end_event_uri',
-                'start_date',
-                'end_date',
-                'start_date_count',
-                'end_date_count'
+                StringColumnDataType(name='uri'),
+                StringColumnDataType(name='insee_code'),
+                StringColumnDataType(name='label'),
+                StringColumnDataType(name='article_code'),
+                BooleanColumnDataType(name='is_france_metropolitaine'),
+                StringColumnDataType(name='start_event_uri'),
+                StringColumnDataType(name='end_event_uri'),
+                DateColumnDataType(name='start_date', format='%Y-%m-%d'),
+                DateColumnDataType(name='end_date', format='%Y-%m-%d'),
+                IntegerColumnDataType(name='start_date_count'),
+                IntegerColumnDataType(name='end_date_count')
             ],
             extra_controls = [
                 CheckPatternAfterDownloadInseeCog(colname="uri", pattern=r"^http://id.insee.fr/geo/departement/[0-9a-z]{8}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{12}$"),
@@ -411,16 +413,16 @@ class RequestsCOGDistrict(RequestCOG):
                 update=Path(__file__).parent / "sql" / "districts_correct.mustache.sql"
             ),
             colnames=[
-                'uri',
-                'insee_code',
-                'label',
-                'article_code',
-                'start_event_uri',
-                'end_event_uri',
-                'start_date',
-                'end_date',
-                'start_date_count',
-                'end_date_count'
+                StringColumnDataType(name='uri'),
+                StringColumnDataType(name='insee_code'),
+                StringColumnDataType(name='label'),
+                StringColumnDataType(name='article_code'),
+                StringColumnDataType(name='start_event_uri'),
+                StringColumnDataType(name='end_event_uri'),
+                DateColumnDataType(name='start_date', format='%Y-%m-%d'),
+                DateColumnDataType(name='end_date', format='%Y-%m-%d'),
+                IntegerColumnDataType(name='start_date_count'),
+                IntegerColumnDataType(name='end_date_count')
             ],
             extra_controls = [
                 CheckPatternAfterDownloadInseeCog(colname="uri", pattern=r"^http://id.insee.fr/geo/district/[0-9a-z]{8}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{12}$"),
@@ -461,16 +463,16 @@ class RequestsCOGCollectivitesOutremer(RequestCOG):
                 update=Path(__file__).parent / "sql" / "collectivites_outremer_correct.mustache.sql"
             ),
             colnames=[
-                'uri',
-                'insee_code',
-                'label',
-                'article_code',
-                'start_event_uri',
-                'end_event_uri',
-                'start_date',
-                'end_date',
-                'start_date_count',
-                'end_date_count'
+                StringColumnDataType(name='uri'),
+                StringColumnDataType(name='insee_code'),
+                StringColumnDataType(name='label'),
+                StringColumnDataType(name='article_code'),
+                StringColumnDataType(name='start_event_uri'),
+                StringColumnDataType(name='end_event_uri'),
+                DateColumnDataType(name='start_date', format='%Y-%m-%d'),
+                DateColumnDataType(name='end_date', format='%Y-%m-%d'),
+                IntegerColumnDataType(name='start_date_count'),
+                IntegerColumnDataType(name='end_date_count')
             ],
             extra_controls = [
                 CheckPatternAfterDownloadInseeCog(colname="uri", pattern=r"^http://id.insee.fr/geo/collectiviteDOutreMer/[0-9a-z]{8}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{12}$"),
@@ -509,20 +511,20 @@ class RequestsCOGPays(RequestCOG):
                 update=Path(__file__).parent / "sql" / "pays_correct.mustache.sql"
             ),
             colnames=[
-                'uri',
-                'insee_code',
-                'label',
-                'article_code',
-                'long_label',
-                'iso3166alpha2_code',
-                'iso3166alpha3_code',
-                'iso3166num_code',
-                'start_event_uri',
-                'end_event_uri',
-                'start_date',
-                'end_date',
-                'start_date_count',
-                'end_date_count'
+                StringColumnDataType(name='uri'),
+                StringColumnDataType(name='insee_code'),
+                StringColumnDataType(name='label'),
+                StringColumnDataType(name='article_code'),
+                StringColumnDataType(name='long_label'),
+                StringColumnDataType(name='iso3166alpha2_code'),
+                StringColumnDataType(name='iso3166alpha3_code'),
+                StringColumnDataType(name='iso3166num_code'),
+                StringColumnDataType(name='start_event_uri'),
+                StringColumnDataType(name='end_event_uri'),
+                DateColumnDataType(name='start_date', format='%Y-%m-%d'),
+                DateColumnDataType(name='end_date', format='%Y-%m-%d'),
+                IntegerColumnDataType(name='start_date_count'),
+                IntegerColumnDataType(name='end_date_count')
             ],
             extra_controls = [
                 CheckPatternAfterDownloadInseeCog(colname="uri", pattern=r"^http://id.insee.fr/geo/pays/[0-9a-z]{8}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{12}$"),

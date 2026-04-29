@@ -180,6 +180,7 @@ class InseeDepartementAddOrReplace(InseeGeoAddOrReplace):
     insee_code : str
     label: str
     article_code: str
+    is_france_metropolitaine: bool
     start_event_uri: str
     end_event_uri: Optional[str] = None
     start_date: datetime.date
@@ -231,6 +232,7 @@ class InseeDepartementAddOrReplace(InseeGeoAddOrReplace):
             'insee_code': self.insee_code,
             'label': self.label,
             'article_code': self.article_code,
+            'is_france_metropolitaine': self.is_france_metropolitaine,
             'start_event_uri': self.start_event_uri,
             'end_event_uri': self.end_event_uri,
             'start_date': self.start_date.isoformat(),

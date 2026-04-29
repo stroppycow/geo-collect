@@ -500,6 +500,7 @@ insee:
         insee_code : "01"
         label: "Ain"
         article_code: "5"
+        is_france_metropolitaine: true
         start_event_uri: "http://id.insee.fr/geo/evenementGeographique/00000000-0000-0000-0000-000000000001"
         end_event_uri: "http://id.insee.fr/geo/evenementGeographique/1049945a-a094-4bb9-b25a-e097fc1a7485"
         start_date: "1941-01-01"
@@ -508,6 +509,7 @@ insee:
         insee_code : "17"
         label: "Charente-Inférieure"
         article_code: "3"
+        is_france_metropolitaine: true
         start_event_uri: "http://id.insee.fr/geo/evenementGeographique/00000000-0000-0000-0000-000000000001"
         end_event_uri: "http://id.insee.fr/geo/evenementGeographique/99a58efd-170b-4e43-a594-4fdbc14a0e1c"
         start_date: "1941-01-01"
@@ -516,6 +518,7 @@ insee:
         insee_code : "54"
         label: "Meurthe-et-Moselle"
         article_code: "0"
+        is_france_metropolitaine: true
         start_event_uri: "http://id.insee.fr/geo/evenementGeographique/00000000-0000-0000-0000-000000000001"
         end_event_uri: "http://id.insee.fr/geo/evenementGeographique/de355321-8bbf-45b8-af61-0b775c646ed7"
         start_date: "1941-01-01"
@@ -524,6 +527,7 @@ insee:
         insee_code : "66"
         label: "Pyrénées-Orientales"
         article_code: "4"
+        is_france_metropolitaine: true
         start_event_uri: "http://id.insee.fr/geo/evenementGeographique/00000000-0000-0000-0000-000000000001"
         end_event_uri:  null
         start_date: "1941-01-01"
@@ -532,6 +536,7 @@ insee:
         insee_code : "44"
         label: "Loire-Atlantique"
         article_code: "3"
+        is_france_metropolitaine: true
         start_event_uri: "http://id.insee.fr/geo/evenementGeographique/0b0f00df-2a73-4d36-ba9b-417a64f32c21"
         end_event_uri:  "http://id.insee.fr/geo/evenementGeographique/c69f25df-572c-4eef-8012-258a903fa0ff"
         start_date: "1957-03-09"
@@ -540,6 +545,7 @@ insee:
         insee_code : "44"
         label: "Loire-Atlantique"
         article_code: "3"
+        is_france_metropolitaine: true
         start_event_uri: "http://id.insee.fr/geo/evenementGeographique/c69f25df-572c-4eef-8012-258a903fa0ff"
         end_event_uri:  "http://id.insee.fr/geo/evenementGeographique/2929de5e-d266-4b6c-b69c-27c0ffb18d23"
         start_date: "2015-12-31"
@@ -548,6 +554,7 @@ insee:
         insee_code : "49"
         label: "Maine-et-Loire"
         article_code: "2"
+        is_france_metropolitaine: true
         start_event_uri: "http://id.insee.fr/geo/evenementGeographique/6d137b81-ebe3-4c1c-9cba-5014cd4571b3"
         end_event_uri:  "http://id.insee.fr/geo/evenementGeographique/c69f25df-572c-4eef-8012-258a903fa0ff"
         start_date: "1973-09-01"
@@ -556,6 +563,7 @@ insee:
         insee_code : "49"
         label: "Maine-et-Loire"
         article_code: "2"
+        is_france_metropolitaine: true
         start_event_uri: "http://id.insee.fr/geo/evenementGeographique/c69f25df-572c-4eef-8012-258a903fa0ff"
         end_event_uri:  "http://id.insee.fr/geo/evenementGeographique/2929de5e-d266-4b6c-b69c-27c0ffb18d23"
         start_date: "2015-12-31"

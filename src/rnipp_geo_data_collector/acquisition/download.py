@@ -11,14 +11,15 @@ from .suppliers.insee.checks.parent_period_overlap import CheckParentPeriodOverl
 from .suppliers.insee.checks.parent_period_no_gaps import CheckParentPeriodNoGapsAfterDownloadInseeCog
 from .suppliers.insee.checks.parent_period_include import CheckParentPeriodsContainChildPeriodAfterDownloadInseeCog
 from .suppliers.laposte.requests import RequestLaPosteHexasmal, OutputPathsRequestLaPosteHexasmal
-
+from ..metadata import InfoCurrentStoredData, GeoCSVFileMetadata
 
 def download_geo_data(
     acquisition_config: AcquisitionConfig,
     exceptions_handler_config: ErrorHandlerConfig,
     duckdb_conn : duckdb.DuckDBPyConnection,
-    output_dir: Path
-):
+    output_dir: Path,
+    current_stored_data: InfoCurrentStoredData
+) -> None:
     """Download data from supplied URLs."""
     output_dir.mkdir(parents=True, exist_ok=True)
     output_dir_insee = output_dir / "insee"
@@ -44,15 +45,15 @@ def download_geo_data(
         acquisition_config = acquisition_config.insee,
         exceptions_handler_config = exceptions_handler_config.insee.communes
     )
-    filenames_arrondissement_municipal= "arrondissement_municipal.csv"
-    output_paths_arrondissement_municipal = OutputPathsRequestCOG(
-        raw_entities=output_dir_insee_raw /  filenames_arrondissement_municipal,
-        add_or_replace_entities=output_dir_insee_add_or_replace / filenames_arrondissement_municipal,
-        remove_entities=output_dir_insee_remove / filenames_arrondissement_municipal,
-        cleaned_entities=output_dir_insee_cleaned / filenames_arrondissement_municipal
+    filenames_arrondissements_municipaux= "arrondissements_municipaux.csv"
+    output_paths_arrondissements_municipaux = OutputPathsRequestCOG(
+        raw_entities=output_dir_insee_raw /  filenames_arrondissements_municipaux,
+        add_or_replace_entities=output_dir_insee_add_or_replace / filenames_arrondissements_municipaux,
+        remove_entities=output_dir_insee_remove / filenames_arrondissements_municipaux,
+        cleaned_entities=output_dir_insee_cleaned / filenames_arrondissements_municipaux
     )
-    request_insee_arrondissement_municipal = RequestCOGArrondissementMunicipal(
-        output_paths = output_paths_arrondissement_municipal,
+    request_insee_arrondissements_municipaux = RequestCOGArrondissementMunicipal(
+        output_paths = output_paths_arrondissements_municipaux,
         acquisition_config = acquisition_config.insee,
         exceptions_handler_config = exceptions_handler_config.insee.arrondissements_municipaux
     )
@@ -116,19 +117,39 @@ def download_geo_data(
     except Exception as e:
         logging.error(f"Error checking content of \"Communes\" data: {e}")
         raise RuntimeError(f"Failed to check content of \"Communes\" data: {e}") from e
-
+    
+    current_stored_data.add_data(
+        key='insee_communes',
+        value=GeoCSVFileMetadata(
+            path=request_insee_commune.output_paths.cleaned_entities,
+            header=True,
+            delim=',',
+            encoding='utf-8',
+            colnames=request_insee_commune.colnames
+        )
+    )
 
     logging.info(f"Downloading \"Arrondissements Municipaux\" data from COG")
     try:
-        request_insee_arrondissement_municipal.send()
+        request_insee_arrondissements_municipaux.send()
     except Exception as e:
         logging.error(f"Error downloading \"Arrondissements Municipaux\" data: {e}")
         raise RuntimeError(f"Failed to download \"Arrondissements Municipaux\" data: {e}") from e
     try:
-        request_insee_arrondissement_municipal.check_content(duckdb_conn = duckdb_conn)
+        request_insee_arrondissements_municipaux.check_content(duckdb_conn = duckdb_conn)
     except Exception as e:
         logging.error(f"Error checking content of \"Arrondissements Municipaux\" data: {e}")
         raise RuntimeError(f"Failed to check content of \"Arrondissements Municipaux\" data: {e}") from e
+    current_stored_data.add_data(
+        key='insee_arrondissements_municipaux',
+        value=GeoCSVFileMetadata(
+            path=request_insee_arrondissements_municipaux.output_paths.cleaned_entities,
+            header=True,
+            delim=',',
+            encoding='utf-8',
+            colnames=request_insee_arrondissements_municipaux.colnames
+        )
+    )
 
     logging.info(f"Downloading \"Departements\" data from COG")
     try:
@@ -141,7 +162,17 @@ def download_geo_data(
     except Exception as e:
         logging.error(f"Error checking content of \"Departements\" data: {e}")
         raise RuntimeError(f"Failed to check content of \"Departements\" data: {e}") from e
-    
+    current_stored_data.add_data(
+        key='insee_departements',
+        value=GeoCSVFileMetadata(
+            path=request_insee_departements.output_paths.cleaned_entities,
+            header=True,
+            delim=',',
+            encoding='utf-8',
+            colnames=request_insee_departements.colnames
+        )
+    )
+
     logging.info(f"Downloading \"Collectivités d'Outre-mer\" data from COG")
     try:
         request_insee_collectivites_outremer.send()
@@ -153,7 +184,17 @@ def download_geo_data(
     except Exception as e:
         logging.error(f"Error checking content of \"Collectivités d'Outre-mer\" data: {e}")
         raise RuntimeError(f"Failed to check content of \"Collectivités d'Outre-mer\" data: {e}") from e
-    
+    current_stored_data.add_data(
+        key='insee_collectivites_outremer',
+        value=GeoCSVFileMetadata(
+            path=request_insee_collectivites_outremer.output_paths.cleaned_entities,
+            header=True,
+            delim=',',
+            encoding='utf-8',
+            colnames=request_insee_collectivites_outremer.colnames
+        )
+    )
+
     logging.info(f"Downloading \"Districts\" data from COG")
     try:
         request_insee_districts.send()
@@ -165,7 +206,17 @@ def download_geo_data(
     except Exception as e:
         logging.error(f"Error checking content of \"Districts\" data: {e}")
         raise RuntimeError(f"Failed to check content of \"Districts\" data: {e}") from e
-    
+    current_stored_data.add_data(
+        key='insee_districts',
+        value=GeoCSVFileMetadata(
+            path=request_insee_districts.output_paths.cleaned_entities,
+            header=True,
+            delim=',',
+            encoding='utf-8',
+            colnames=request_insee_districts.colnames
+        )
+    )
+
     logging.info(f"Downloading \"Pays\" data from COG")
     try:
         request_insee_pays.send()
@@ -177,10 +228,20 @@ def download_geo_data(
     except Exception as e:
         logging.error(f"Error checking content of \"Pays\" data: {e}")
         raise RuntimeError(f"Failed to check content of \"Pays\" data: {e}") from e
+    current_stored_data.add_data(
+        key='insee_pays',
+        value=GeoCSVFileMetadata(
+            path=request_insee_pays.output_paths.cleaned_entities,
+            header=True,
+            delim=',',
+            encoding='utf-8',
+            colnames=request_insee_pays.colnames
+        )
+    )
 
     requests_insee_list = [
         request_insee_commune,
-        request_insee_arrondissement_municipal,
+        request_insee_arrondissements_municipaux,
         request_insee_departements,
         request_insee_collectivites_outremer,
         request_insee_districts,
@@ -206,19 +267,19 @@ def download_geo_data(
     logging.info(f"Check, for \"Arrondissements Municipaux\" data, the existence of the URIs of the parent geographic entities (municipalities).")
     CheckParentURIsExistAfterDownloadInseeCog(
         parents_view_name=[request_insee_commune.view_name]
-    ).run(request=request_insee_arrondissement_municipal, duckdb_conn=duckdb_conn)
+    ).run(request=request_insee_arrondissements_municipaux, duckdb_conn=duckdb_conn)
     logging.info(f"Check, for the \"Arrondissements Municipaux\" data, that the validity periods of the parent geographic entities of a municipality do not overlap.")
     CheckParentPeriodOverlapAfterDownloadInseeCog(
         parents_view_name=[request_insee_commune.view_name]
-    ).run(request=request_insee_arrondissement_municipal, duckdb_conn=duckdb_conn)
+    ).run(request=request_insee_arrondissements_municipaux, duckdb_conn=duckdb_conn)
     logging.info(f"Check, for the \"Arrondissements Municipaux\" data, that the union of the validity periods of the parent geographic entities of a municipality forms a continuous interval (i.e., there are no “gaps”).")
     CheckParentPeriodNoGapsAfterDownloadInseeCog(
         parents_view_name=[request_insee_commune.view_name]
-    ).run(request=request_insee_arrondissement_municipal, duckdb_conn=duckdb_conn)
+    ).run(request=request_insee_arrondissements_municipaux, duckdb_conn=duckdb_conn)
     logging.info(f"Verify that, for the \"Arrondissements Municipaux\" data, the municipality’s validity period is indeed included in the union of the validity periods of its parent geographic entities.")
     CheckParentPeriodsContainChildPeriodAfterDownloadInseeCog(
         parents_view_name=[request_insee_commune.view_name]
-    ).run(request=request_insee_arrondissement_municipal, duckdb_conn=duckdb_conn)
+    ).run(request=request_insee_arrondissements_municipaux, duckdb_conn=duckdb_conn)
     logging.info(f"Check that the URIs of all geographic events are associated with only a single, unique event date.")
     CheckEventsConsistencyAfterDownloadInseeCog().run(requests=requests_insee_list, duckdb_conn=duckdb_conn)
     logging.info(f"Verify that there are no overlapping periods for a given INSEE code (regardless of the type of geographical entity), i.e., that there are not two URIs associated with the same INSEE code whose validity periods intersect.")
@@ -236,7 +297,7 @@ def download_geo_data(
     output_dir_laposte_add.mkdir(parents=True, exist_ok=True)
 
     filenames_laposte = "laposte_hexasmal.csv"
-    request_laposte_hexaslmal = RequestLaPosteHexasmal(
+    request_laposte_hexasmal = RequestLaPosteHexasmal(
             output_paths = OutputPathsRequestLaPosteHexasmal(
                 raw_entities=output_dir_laposte_raw /  filenames_laposte,
                 add_entities=output_dir_laposte_add / filenames_laposte,
@@ -248,12 +309,24 @@ def download_geo_data(
     )
     logging.info(f"Downloading \"La Poste Hexasmal\" data")
     try:
-        request_laposte_hexaslmal.send()
+        request_laposte_hexasmal.send()
     except Exception as e:
         logging.error(f"Error downloading \"La Poste Hexasmal\" data: {e}")
         raise RuntimeError(f"Failed to download \"La Poste Hexasmal\" data: {e}") from e
     try:
-        request_laposte_hexaslmal.check_content(duckdb_conn = duckdb_conn)
+        request_laposte_hexasmal.check_content(duckdb_conn = duckdb_conn)
     except Exception as e:
-        logging.error(f"Error checking content of \"La Poste Hexasmals\" data: {e}")
+        logging.error(f"Error checking content of \"La Poste Hexasmal\" data: {e}")
         raise RuntimeError(f"Failed to check content of \"La Poste Hexasmal\" data: {e}") from e
+    current_stored_data.add_data(
+        key='laposte_hexasmal',
+        value=GeoCSVFileMetadata(
+            path=request_laposte_hexasmal.output_paths.cleaned_entities,
+            header=True,
+            delim=',',
+            encoding='utf-8',
+            colnames=request_laposte_hexasmal.colnames
+        )
+    )
+
+    return None
