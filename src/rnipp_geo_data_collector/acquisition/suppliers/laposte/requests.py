@@ -12,7 +12,10 @@ from .config import LaPosteExceptionsToIgnoreOrCorrect, LaPosteSupplierConfig
 from .checks.abstract import DataValidationAndConsistencyLaPosteHexasmal
 from .checks.parsing import CheckParsingAfterDownloadLaPosteHexasmal
 from .checks.pattern import CheckPatternAfterDownloadLaPosteHexasmal
-from ....metadata import ColumnDataType, StringColumnDataType 
+from .checks.unique_value_by_group import  CheckUniqueValueByGroupAfterDownloadLaPosteHexasmal
+from .checks.associated_name_check import  CheckAssociatedNameAfterDownloadLaPosteHexasmal
+
+from ....metadata import StringColumnDataType 
 
 class TemplatesSQLRequestLaPosteHexasmal:
     def __init__(
@@ -78,7 +81,9 @@ class RequestLaPosteHexasmal:
         self.acquisition_config = acquisition_config
         self.extra_controls = [
             CheckPatternAfterDownloadLaPosteHexasmal(colname="insee_code", pattern=r"^((0[1-9]|[1-8][0-9]|9[0-8]|2[AB])[0-9]{3}|99138)$"),
-            CheckPatternAfterDownloadLaPosteHexasmal(colname="postal_code", pattern=r"^[0-9]{5}$")
+            CheckPatternAfterDownloadLaPosteHexasmal(colname="postal_code", pattern=r"^[0-9]{5}$"),
+            CheckUniqueValueByGroupAfterDownloadLaPosteHexasmal(colname="name", group_colname="insee_code"),
+            CheckAssociatedNameAfterDownloadLaPosteHexasmal()
         ]
         self.colnames = [
             StringColumnDataType(name='insee_code'),

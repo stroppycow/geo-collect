@@ -8,10 +8,11 @@ import datetime
 import unicodedata
 import re
 from rapidfuzz import fuzz
-
+from itertools import chain
 
 from ..metadata import InfoCurrentStoredData, GeoCSVFileMetadata, DateColumnDataType, StringColumnDataType, StringListColumnDataType, IntegerColumnDataType
 from ..graph.graph_event import build_history_graph_of_geo_entities
+
 
 def get_geo_entity_type(vertex, uri_attr: str = 'uri') -> str:
     uri = None
@@ -123,11 +124,230 @@ def get_postal_codes_current_geo_entity(
     return []
 
 
+def get_leaves_geo_entity_graph(vertex: igraph.Vertex) -> list[igraph.Vertex]:
+    reachable = vertex.graph.subcomponent(vertex.index, mode="OUT")
+    leaves = [vertex.graph.vs[v] for v in reachable if vertex.graph.vs[v].degree(mode="OUT") == 0]
+    return leaves
+
+def path_to_leaf_is_unique_in_and_out(vertex: igraph.Vertex) -> bool:
+    reachable = vertex.graph.subcomponent(vertex.index, mode="OUT")
+    if [v for v in reachable if v != vertex.index and vertex.graph.vs[v].degree(mode="IN") > 1 ]:
+        return False
+    return True
+
+
+def get_vertices_info(
+        vertices: list[igraph.Vertex],
+        insee_colname_uri_label: str,
+        insee_colname_label_label: str,
+        insee_colname_insee_code_label: str,
+        postal_codes_attribute: str
+    ) -> list[dict]:
+    res = []
+    for v in vertices:   
+        uri : Optional[str] = None
+        insee_label : Optional[str] = None
+        insee_code : Optional[str] = None
+        postal_codes: list[str] = []
+        try:
+            uri = v[insee_colname_uri_label]                   
+        except:
+            pass
+        try:
+            insee_label = v[insee_colname_label_label]                   
+        except:
+            pass
+        try:
+            insee_code = v[insee_colname_insee_code_label]                   
+        except:
+            pass
+        try:
+            postal_codes = v[postal_codes_attribute]                   
+        except:
+            pass
+        if not isinstance(uri, str):
+            raise RuntimeError("The uri of the vertex is not a string. It is {uri_type}".format(uri_type=type(uri)))
+        if not isinstance(insee_label, str):
+            raise RuntimeError("The insee_label of the vertex is not a string for {uri}".format(uri=uri))
+        if not isinstance(insee_code, str):
+            raise RuntimeError("The insee_code of the vertex is not a string for {uri}".format(uri=uri))
+        if not isinstance(postal_codes, list):
+            raise RuntimeError("The postal_codes of the vertex is not a list for {uri}".format(uri=uri))
+        if postal_codes:
+            if any([not isinstance(x, str) for x in postal_codes]):
+                raise RuntimeError("The postal_codes of the vertex contains non string elements for {uri}".format(uri=uri))
+        res.append(
+            {
+                insee_colname_uri_label: uri,
+                insee_colname_label_label: insee_label,
+                insee_colname_insee_code_label: insee_code,
+                postal_codes_attribute: postal_codes
+            }
+        )
+    return res
+        
+
+def get_postal_codes_historical_geo_entity_when_children_have_single_postal_code(
+        vertex: igraph.Vertex,
+        insee_colname_uri_label: str,
+        insee_colname_label_label: str,
+        insee_colname_insee_code_label: str,
+        insee_colname_end_date_label: str,
+        postal_codes_attribute: str
+    ) -> list[str]:
+    uri : Optional[str] = None
+    end_date : Optional[datetime.date] = None
+    postal_codes: list[str] = []
+    try:
+        uri = vertex[insee_colname_uri_label]                   
+    except:
+        pass
+    try:
+        end_date = vertex[insee_colname_end_date_label]                   
+    except:
+        pass
+    try:
+        postal_codes = vertex[postal_codes_attribute]                   
+    except:
+        pass
+    if not isinstance(uri, str):
+        raise RuntimeError("The uri of the vertex is not a string. It is {uri_type}".format(uri_type=type(uri)))
+    if end_date is None:
+        if not isinstance(postal_codes, list):
+            raise RuntimeError("The postal_codes of the vertex is not a list for {uri}".format(uri=uri))
+        if postal_codes:
+            if any([not isinstance(x, str) for x in postal_codes]):
+                raise RuntimeError("The postal_codes of the vertex contains non string elements for {uri}".format(uri=uri))
+        return postal_codes
+    else:
+        leaves_geo_entity = get_leaves_geo_entity_graph(vertex)
+        leaves_info = get_vertices_info(
+            vertices=leaves_geo_entity,
+            insee_colname_uri_label=insee_colname_uri_label,
+            insee_colname_label_label=insee_colname_label_label,
+            insee_colname_insee_code_label=insee_colname_insee_code_label,
+            postal_codes_attribute=postal_codes_attribute
+        )
+        postal_codes_leaves = list(set(chain.from_iterable([x[postal_codes_attribute] for x in leaves_info])))
+        if postal_codes_leaves:
+            if len(postal_codes_leaves) == 1:
+                return postal_codes_leaves
+            else:
+                return []
+        else:
+            return []
+        
+def get_postal_codes_historical_geo_entity_when_path_to_leaf_is_unique_in_and_out(
+        vertex: igraph.Vertex,
+        insee_colname_uri_label: str,
+        insee_colname_label_label: str,
+        insee_colname_insee_code_label: str,
+        postal_codes_attribute: str
+    ) -> list[str]:
+    uri : Optional[str] = None
+    postal_codes: list[str] = []
+    try:
+        uri = vertex[insee_colname_uri_label]                   
+    except:
+        pass
+    try:
+        postal_codes = vertex[postal_codes_attribute]                   
+    except:
+        pass
+    if not isinstance(uri, str):
+        raise RuntimeError("The uri of the vertex is not a string. It is {uri_type}".format(uri_type=type(uri)))
+    if not isinstance(postal_codes, list):
+        raise RuntimeError("The postal_codes of the vertex is not a list for {uri}".format(uri=uri))
+    if postal_codes:
+        if any([not isinstance(x, str) for x in postal_codes]):
+            raise RuntimeError("The postal_codes of the vertex contains non string elements for {uri}".format(uri=uri))
+        return postal_codes
+    else:
+        if path_to_leaf_is_unique_in_and_out(vertex=vertex):
+            leaves_geo_entity = get_leaves_geo_entity_graph(vertex)
+            leaves_info = get_vertices_info(
+                vertices=leaves_geo_entity,
+                insee_colname_uri_label=insee_colname_uri_label,
+                insee_colname_label_label=insee_colname_label_label,
+                insee_colname_insee_code_label=insee_colname_insee_code_label,
+                postal_codes_attribute=postal_codes_attribute
+            )
+            return list(set(chain.from_iterable([x[postal_codes_attribute] for x in leaves_info])))
+        else:
+            return []
+        
+def get_postal_codes_historical_geo_entity(
+        vertex: igraph.Vertex,
+        insee_colname_uri_label: str,
+        insee_colname_label_label: str,
+        insee_colname_insee_code_label: str,
+        postal_codes_attribute: str
+    ) -> list[str]:
+    uri : Optional[str] = None
+    label: Optional[str] = None
+    postal_codes: list[str] = []
+    try:
+        uri = vertex[insee_colname_uri_label]                   
+    except:
+        pass
+    try:
+        postal_codes = vertex[postal_codes_attribute]                   
+    except:
+        pass
+    try:
+        label = vertex[insee_colname_label_label]                   
+    except:
+        pass
+    if not isinstance(uri, str):
+        raise RuntimeError("The uri of the vertex is not a string. It is {uri_type}".format(uri_type=type(uri)))
+    if not isinstance(uri, str):
+        raise RuntimeError("The uri of the vertex is not a string. It is {uri_type}".format(uri_type=type(uri)))
+    if not isinstance(postal_codes, list):
+        raise RuntimeError("The postal_codes of the vertex is not a list for {uri}".format(uri=uri))
+    if postal_codes:
+        if any([not isinstance(x, str) for x in postal_codes]):
+            raise RuntimeError("The postal_codes of the vertex contains non string elements for {uri}".format(uri=uri))
+        return postal_codes
+    else:
+        predecessors_geo_entities = [vertex.graph.vs[i] for i in vertex.graph.neighbors(vertex.index, mode="IN")]
+        predecessors_info = get_vertices_info(
+            vertices=predecessors_geo_entities,
+            insee_colname_uri_label=insee_colname_uri_label,
+            insee_colname_label_label=insee_colname_label_label,
+            insee_colname_insee_code_label=insee_colname_insee_code_label,
+            postal_codes_attribute=postal_codes_attribute
+        )
+        # We concatenate all the ZIP codes of the immediate preceding entities
+        # if those entities all have a ZIP code and if the only entity following them is this one
+        if any([not(len(d[postal_codes_attribute]) > 0 and v.degree(mode="OUT") ==  1) for d,v in zip(predecessors_info, predecessors_geo_entities)]):
+            return list(set(chain.from_iterable([x[postal_codes_attribute] for x in predecessors_info])))
+    
+
+        successors_geo_entities = [vertex.graph.vs[i] for i in vertex.graph.neighbors(vertex.index, mode="OUT")]
+        successors_info = get_vertices_info(
+            vertices=successors_geo_entities,
+            insee_colname_uri_label=insee_colname_uri_label,
+            insee_colname_label_label=insee_colname_label_label,
+            insee_colname_insee_code_label=insee_colname_insee_code_label,
+            postal_codes_attribute=postal_codes_attribute
+        )
+        #The search for a ZIP code for this entity continues only if all subsequent entities have been assigned a ZIP code
+        if len([d[postal_codes_attribute] for d in successors_info if len(d[postal_codes_attribute]) == 0]) > 0:
+            return []
+
+        successors_postal_codes = list(set(chain.from_iterable([x[postal_codes_attribute] for x in successors_info])))
+        if len(successors_postal_codes) == 1:
+            return successors_postal_codes
+        elif len(successors_geo_entities) == 1 and successors_geo_entities[0].degree(mode="IN") == 1:
+            return successors_postal_codes
+        return []
+
+
 def merge_postal_codes(
-    duckdb_connection: duckdb.DuckDBPyConnection,
-    current_stored_data: InfoCurrentStoredData,
-    output_dir : Path
-) -> None:
+        duckdb_connection: duckdb.DuckDBPyConnection,
+        current_stored_data: InfoCurrentStoredData,
+        output_dir : Path
+    ) -> None:
     insee_colname_uri_label = 'uri'
     insee_colname_label_label = 'label'
     insee_colname_end_date_label = 'end_date'
@@ -162,15 +382,14 @@ def merge_postal_codes(
 
     table_name_laposte_hexasmal = 'laposte_hexasmal'
     sql_query = """
-        CREATE OR REPLACE VIEW {table_name} AS (
-            {query}
-        );
-        """.format(
-            table_name=table_name_laposte_hexasmal,
-            query=laposte_hexasmal_metadata.get_duckdb_sql_import_query()
-        )
+    CREATE OR REPLACE VIEW {table_name} AS (
+        {query}
+    );
+    """.format(
+        table_name=table_name_laposte_hexasmal,
+        query=laposte_hexasmal_metadata.get_duckdb_sql_import_query()
+    )
     
-
     hexasmal_data_dict : dict[str, list[tuple[str, str, str, str]]] = {}
     try:
         duckdb_connection.execute(sql_query)
@@ -263,6 +482,21 @@ def merge_postal_codes(
             insee_colname_end_date_label=insee_colname_end_date_label
         ) for v in graph.vs
     ]
+    current_count_assigned = len([True for x in graph.vs[graph_postal_codes_attributes] if len(x) > 0 ]) 
+    previous_count_affected = current_count_assigned + 1
+    
+    while current_count_assigned < previous_count_affected:
+        graph.vs[graph_postal_codes_attributes] = [
+            get_postal_codes_historical_geo_entity(
+                vertex=v,
+                insee_colname_uri_label=insee_colname_uri_label,
+                insee_colname_label_label=insee_colname_label_label,
+                insee_colname_insee_code_label=insee_colname_insee_code_label,
+                postal_codes_attribute=graph_postal_codes_attributes
+            ) for v in graph.vs
+        ]
+        previous_count_affected = current_count_assigned
+        current_count_assigned = len([True for x in graph.vs[graph_postal_codes_attributes] if len(x) > 0 ]) 
 
     new_col_postal_codes_communes = StringListColumnDataType(name='postal_codes', sep='|')
     new_col_postal_codes_arrondissements_municipaux =  StringListColumnDataType(name='postal_codes', sep='|')

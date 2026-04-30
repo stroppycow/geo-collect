@@ -23,6 +23,7 @@ from .checks.uri_unicity import CheckURIUnicityAfterDownloadInseeCog
 from .checks.end_event_consistency import CheckEndEventConsistencyAfterDownloadInseeCog
 from .checks.events_unequal import CheckEventsUnequalAfterDownloadInseeCog
 from .checks.apply_update import InseeGeoRemove, InseeGeoAddOrReplace
+from .checks.not_null import CheckNotNullAfterDownloadInseeCog
 from ....metadata import ColumnDataType, StringColumnDataType, StringListColumnDataType, BooleanColumnDataType, DateColumnDataType, IntegerColumnDataType
 
 
@@ -379,6 +380,7 @@ class RequestCOGDepartement(RequestCOG):
                 CheckURIUnicityAfterDownloadInseeCog(),
                 CheckPatternAfterDownloadInseeCog(colname="insee_code", pattern=r"^(0[1-9]|[1-8][0-9]|9[0-5]|2[AB]|97[1-9])$"),
                 CheckPatternAfterDownloadInseeCog(colname="article_code", pattern=r"^[0-8X]$"),
+                CheckNotNullAfterDownloadInseeCog(colname='is_france_metropolitaine'),
                 CheckPatternAfterDownloadInseeCog(colname="start_event_uri", pattern=r"^http://id.insee.fr/geo/evenementGeographique/[0-9a-z]{8}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{12}$"),
                 CheckPatternAfterDownloadInseeCog(colname="end_event_uri", pattern=r"^(http://id.insee.fr/geo/evenementGeographique/[0-9a-z]{8}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{12})?$"),
                 CheckEventsUnequalAfterDownloadInseeCog(),
