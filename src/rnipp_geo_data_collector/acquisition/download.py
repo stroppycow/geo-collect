@@ -295,7 +295,7 @@ def download_geo_data(
     output_dir_laposte_remove.mkdir(parents=True, exist_ok=True)
     output_dir_laposte_add = output_dir_laposte / "add"
     output_dir_laposte_add.mkdir(parents=True, exist_ok=True)
-
+    
     filenames_laposte = "laposte_hexasmal.csv"
     request_laposte_hexasmal = RequestLaPosteHexasmal(
             output_paths = OutputPathsRequestLaPosteHexasmal(

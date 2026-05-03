@@ -15,7 +15,7 @@ from .checks.pattern import CheckPatternAfterDownloadLaPosteHexasmal
 from .checks.unique_value_by_group import  CheckUniqueValueByGroupAfterDownloadLaPosteHexasmal
 from .checks.associated_name_check import  CheckAssociatedNameAfterDownloadLaPosteHexasmal
 
-from ....metadata import StringColumnDataType 
+from ....metadata import StringColumnDataType,  ColumnDataType
 
 class TemplatesSQLRequestLaPosteHexasmal:
     def __init__(
@@ -85,7 +85,7 @@ class RequestLaPosteHexasmal:
             CheckUniqueValueByGroupAfterDownloadLaPosteHexasmal(colname="name", group_colname="insee_code"),
             CheckAssociatedNameAfterDownloadLaPosteHexasmal()
         ]
-        self.colnames = [
+        self.colnames : list[ColumnDataType] = [
             StringColumnDataType(name='insee_code'),
             StringColumnDataType(name='name'),
             StringColumnDataType(name='postal_code'),
