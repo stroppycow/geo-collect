@@ -154,7 +154,7 @@ def get_vertices_info(
     vertices: list = []
     for id in ids:
         try:
-            vertices.append(graph[id])
+            vertices.append(graph.vs[id])
         except:
             pass
     res: list[GeoEntityVertexInfo] = []
@@ -291,7 +291,7 @@ def match_hexasmal_labels_to_insee_labels(
     return output
 
 
-def get_postal_codes_historical_geo_entity_when_hexasmal_labels_are_similar_to_insee_label(
+def get_postal_codes_historical_geo_entity(
         graph: igraph.Graph,
         hexasmal_data_dict: dict[str, list[tuple[str, str, str, str]]],
         insee_colname_uri_label: str,
@@ -302,7 +302,7 @@ def get_postal_codes_historical_geo_entity_when_hexasmal_labels_are_similar_to_i
     components  = graph.connected_components(mode="weak")
     for c in components:
         if len(c) > 1:
-            subgraph = components.subgraph(c)
+            subgraph = graph.subgraph(c)
             degrees_out = subgraph.degree(mode="OUT")
             degrees_in = subgraph.degree(mode="IN")
             nodes_out = [i for i, d in enumerate(degrees_out) if d == 0]
@@ -315,121 +315,35 @@ def get_postal_codes_historical_geo_entity_when_hexasmal_labels_are_similar_to_i
                 insee_colname_insee_code_label=insee_colname_insee_code_label,
                 postal_codes_attribute=postal_codes_attribute
             )
-            info_nodes_in = get_vertices_info(
-                graph=subgraph,
-                ids=nodes_in,
-                insee_colname_uri_label=insee_colname_uri_label,
-                insee_colname_label_label=insee_colname_label_label,
-                insee_colname_insee_code_label=insee_colname_insee_code_label,
-                postal_codes_attribute=postal_codes_attribute
-            )
-            hexasmal_labels = extract_hexasmal_labels_from_hexasmal_infos(
-                hexasmal_data_dict=hexasmal_data_dict,
-                info_nodes_out=info_nodes_out
-            )
-            match_hexasmal_labels_to_insee_labels(
-                hexasmal_labels=hexasmal_labels,
-                info_nodes_in=info_nodes_in
-            )
+            postal_codes_out =  list(set([y for x in info_nodes_out for y in x.postal_codes]))
+            postal_codes_everywhere = all([len( x.postal_codes) > 0  for x in info_nodes_out])
+            if len(nodes_out) > 0 and len(postal_codes_out) == 1 and len(postal_codes_out) == 1 and postal_codes_everywhere:
+                for v in subgraph.vs:
+                    graph.vs.find(name=v[insee_colname_uri_label])[postal_codes_attribute]=postal_codes_out
+            else:
+                """
+                info_nodes_in = get_vertices_info(
+                    graph=subgraph,
+                    ids=nodes_in,
+                    insee_colname_uri_label=insee_colname_uri_label,
+                    insee_colname_label_label=insee_colname_label_label,
+                    insee_colname_insee_code_label=insee_colname_insee_code_label,
+                    postal_codes_attribute=postal_codes_attribute
+                )
+                hexasmal_labels = extract_hexasmal_labels_from_hexasmal_infos(
+                    hexasmal_data_dict=hexasmal_data_dict,
+                    info_nodes_out=info_nodes_out
+                )
+                output = match_hexasmal_labels_to_insee_labels(
+                    hexasmal_labels=hexasmal_labels,
+                    info_nodes_in=info_nodes_in
+                )
+                for k,v in output.items():
+                    graph.vs.find(name=k)[postal_codes_attribute]=v
+                """
+
             
 
-
-            
-                    
-def get_postal_codes_historical_geo_entity(
-        vertex: igraph.Vertex,
-        hexasmal_data_dict: dict[str, list[tuple[str, str, str, str]]],
-        insee_colname_uri_label: str,
-        insee_colname_label_label: str,
-        insee_colname_insee_code_label: str,
-        postal_codes_attribute: str
-    ) -> list[str]:
-    uri : Optional[str] = None
-    label: Optional[str] = None
-    postal_codes: list[str] = []
-    try:
-        uri = vertex[insee_colname_uri_label]                   
-    except:
-        pass
-    try:
-        postal_codes = vertex[postal_codes_attribute]                   
-    except:
-        pass
-    try:
-        label = vertex[insee_colname_label_label]                   
-    except:
-        pass
-    if not isinstance(uri, str):
-        raise RuntimeError("The uri of the vertex is not a string. It is {uri_type}".format(uri_type=type(uri)))
-    if not isinstance(uri, str):
-        raise RuntimeError("The uri of the vertex is not a string. It is {uri_type}".format(uri_type=type(uri)))
-    if not isinstance(postal_codes, list):
-        raise RuntimeError("The postal_codes of the vertex is not a list for {uri}".format(uri=uri))
-    if postal_codes:
-        if any([not isinstance(x, str) for x in postal_codes]):
-            raise RuntimeError("The postal_codes of the vertex contains non string elements for {uri}".format(uri=uri))
-        return postal_codes
-    else:
-        predecessors_geo_entities = [vertex.graph.vs[i] for i in vertex.graph.neighbors(vertex.index, mode="IN")]
-        predecessors_info = get_vertices_info(
-            vertices=predecessors_geo_entities,
-            insee_colname_uri_label=insee_colname_uri_label,
-             insee_colname_label_label=insee_colname_label_label,
-            insee_colname_insee_code_label=insee_colname_insee_code_label,
-            postal_codes_attribute=postal_codes_attribute
-        )
-        # We concatenate all the ZIP codes of the immediate preceding entities
-        # if those entities all have a ZIP code and if the only entity following them is this one
-        if uri == 'http://id.insee.fr/geo/commune/2be6f108-9511-4601-a219-649daf57f042':
-            print("predecessors_info : {predecessors_info}".format(predecessors_info=predecessors_info))
-            print("predecessors_geo_entities : {predecessors_geo_entities}".format(predecessors_geo_entities=predecessors_geo_entities))
-            print([len(d[postal_codes_attribute]) > 0 and v.degree(mode="OUT") ==  1 for d,v in zip(predecessors_info, predecessors_geo_entities)])
-        
-        if predecessors_geo_entities:
-            if all([len(d[postal_codes_attribute]) > 0 and v.degree(mode="OUT") ==  1 for d,v in zip(predecessors_info, predecessors_geo_entities)]):
-                return list(set(chain.from_iterable([x[postal_codes_attribute] for x in predecessors_info])))
-        
-        leaves_geo_entity = get_leaves_geo_entity_graph(vertex)
-        leaves_info = get_vertices_info(
-            vertices=leaves_geo_entity,
-            insee_colname_uri_label=insee_colname_uri_label,
-            insee_colname_label_label=insee_colname_label_label,
-            insee_colname_insee_code_label=insee_colname_insee_code_label,
-            postal_codes_attribute=postal_codes_attribute
-        )
-        leaves_postal_codes = list(set(chain.from_iterable([x[postal_codes_attribute] for x in leaves_info])))
-        if len(leaves_info)==1:
-            hexasmal_info : list[tuple[str, str, str, str]] = []
-            try:
-                hexasmal_info = hexasmal_data_dict[leaves_info[0][insee_colname_insee_code_label]]
-            except:
-                pass
-            if hexasmal_info:
-                hexasmal_labels = [x[2] for x in hexasmal_info if x[2] is not None]
-                hexasmal_labels.extend([x[3] for x in hexasmal_info if x[3] is not None])
-                hexasmal_labels = set(list([x for x in hexasmal_labels if x != '']))
-                if len(hexasmal_labels) == 1:
-                    return leaves_postal_codes
-        
-
-        successors_geo_entities = [vertex.graph.vs[i] for i in vertex.graph.neighbors(vertex.index, mode="OUT")]
-        successors_info = get_vertices_info(
-            vertices=successors_geo_entities,
-            insee_colname_uri_label=insee_colname_uri_label,
-            insee_colname_label_label=insee_colname_label_label,
-            insee_colname_insee_code_label=insee_colname_insee_code_label,
-            postal_codes_attribute=postal_codes_attribute
-        )
-        #The search for a ZIP code for this entity continues only if all subsequent entities have been assigned a ZIP code
-        if len([d[postal_codes_attribute] for d in successors_info if len(d[postal_codes_attribute]) == 0]) > 0:
-            return []
-
-        successors_postal_codes = list(set(chain.from_iterable([x[postal_codes_attribute] for x in successors_info])))
-        if len(successors_postal_codes) == 1:
-            return successors_postal_codes
-        elif len(successors_geo_entities) == 1 and successors_geo_entities[0].degree(mode="IN") == 1:
-            return successors_postal_codes
-        return []
 
 
 def merge_postal_codes(
@@ -578,16 +492,14 @@ def merge_postal_codes(
     print("previous_count_affected : {previous_count_affected}".format(previous_count_affected=previous_count_affected))
 
     while current_count_assigned > previous_count_affected:
-        graph.vs[graph_postal_codes_attributes] = [
-            get_postal_codes_historical_geo_entity(
-                vertex=v,
-                hexasmal_data_dict=hexasmal_data_dict,
-                insee_colname_uri_label=insee_colname_uri_label,
-                insee_colname_label_label=insee_colname_label_label,
-                insee_colname_insee_code_label=insee_colname_insee_code_label,
-                postal_codes_attribute=graph_postal_codes_attributes
-            ) for v in graph.vs
-        ]
+        get_postal_codes_historical_geo_entity(
+            graph=graph,
+            hexasmal_data_dict=hexasmal_data_dict,
+            insee_colname_uri_label=insee_colname_uri_label,
+            insee_colname_label_label=insee_colname_label_label,
+            insee_colname_insee_code_label=insee_colname_insee_code_label,
+            postal_codes_attribute=graph_postal_codes_attributes
+        )
         previous_count_affected = current_count_assigned
         current_count_assigned = len([True for x in graph.vs[graph_postal_codes_attributes] if len(x) > 0 ]) 
         print("current_count_assigned : {current_count_assigned}".format(current_count_assigned=current_count_assigned))
@@ -597,19 +509,37 @@ def merge_postal_codes(
     new_col_postal_codes_arrondissements_municipaux =  StringListColumnDataType(name='postal_codes', sep='|')
     new_col_postal_codes_count_communes = IntegerColumnDataType(name='postal_codes_count')
     new_col_postal_codes_count_arrondissements_municipaux =  IntegerColumnDataType(name='postal_codes_count')
-
+    new_col_cluster_id_communes = IntegerColumnDataType(name='cluster_id')
+    new_col_cluster_id_arrondissements_municipaux = IntegerColumnDataType(name='cluster_id')
+    new_col_cluster_size_communes = IntegerColumnDataType(name='cluster_size')
+    new_col_cluster_size_arrondissements_municipaux = IntegerColumnDataType(name='cluster_size')
+  
     output_dir.mkdir(parents=True, exist_ok=True)
     output_csv_path_communes = output_dir / communes_path.name
     output_csv_path_arrondissements_municipaux = output_dir / arrondissements_municipaux_path.name
+    
+    components = graph.connected_components(mode="weak")
+    components_sizes = components.sizes()
+
     with open(output_csv_path_communes, mode="w", newline="", encoding="utf-8") as f_communes, open(output_csv_path_arrondissements_municipaux, mode="w", newline="", encoding="utf-8") as f_arrondissements_municipaux:
         writer_communes = csv.DictWriter(
             f=f_communes,
-            fieldnames=[x.name for x in communes_colnames]+[new_col_postal_codes_communes.name, new_col_postal_codes_count_communes.name]
+            fieldnames=[x.name for x in communes_colnames]+[
+                new_col_postal_codes_communes.name,
+                new_col_postal_codes_count_communes.name,
+                new_col_cluster_id_communes.name,
+                new_col_cluster_size_communes.name
+            ]
         )
         writer_communes.writeheader()
         writer_arrondissements_municipaux= csv.DictWriter(
             f=f_arrondissements_municipaux,
-            fieldnames=[x.name for x in arrondissements_municipaux_colnames]+[new_col_postal_codes_arrondissements_municipaux.name, new_col_postal_codes_count_arrondissements_municipaux.name]
+            fieldnames=[x.name for x in arrondissements_municipaux_colnames]+[
+                new_col_postal_codes_arrondissements_municipaux.name,
+                new_col_postal_codes_count_arrondissements_municipaux.name,
+                new_col_cluster_id_arrondissements_municipaux.name,
+                new_col_cluster_size_arrondissements_municipaux.name
+            ]
         )
         writer_arrondissements_municipaux.writeheader()
         for v in graph.vs:
@@ -623,6 +553,8 @@ def merge_postal_codes(
                         raise e
                 row_output[new_col_postal_codes_communes.name] = new_col_postal_codes_communes.sep.join(v[graph_postal_codes_attributes])
                 row_output[new_col_postal_codes_count_communes.name] = len(v[graph_postal_codes_attributes])
+                row_output[new_col_cluster_id_communes.name] = components.membership[v.index]
+                row_output[new_col_cluster_size_communes.name] = components_sizes[components.membership[v.index]]
                 writer_communes.writerow(row_output)
             elif geo_entity == 'arrondissementMunicipal':
                 row_output = {}
@@ -633,6 +565,8 @@ def merge_postal_codes(
                         raise e
                 row_output[new_col_postal_codes_arrondissements_municipaux.name] = new_col_postal_codes_arrondissements_municipaux.sep.join(v[graph_postal_codes_attributes])
                 row_output[new_col_postal_codes_count_arrondissements_municipaux.name] = len(v[graph_postal_codes_attributes])
+                row_output[new_col_cluster_id_arrondissements_municipaux.name] = components.membership[v.index]
+                row_output[new_col_cluster_size_arrondissements_municipaux.name] = components_sizes[components.membership[v.index]]
                 writer_arrondissements_municipaux.writerow(row_output)
     current_stored_data.replace_data(
         key='insee_communes',
@@ -641,7 +575,12 @@ def merge_postal_codes(
             header=True,
             delim=',',
             encoding='utf-8',
-            colnames=communes_colnames+[new_col_postal_codes_communes, new_col_postal_codes_count_communes]
+            colnames=communes_colnames+[
+                new_col_postal_codes_communes,
+                new_col_postal_codes_count_communes,
+                new_col_cluster_id_communes,
+                new_col_cluster_size_communes
+            ]
         )
     )
     current_stored_data.replace_data(
@@ -651,7 +590,12 @@ def merge_postal_codes(
             header=True,
             delim=',',
             encoding='utf-8',
-            colnames=arrondissements_municipaux_colnames+[new_col_postal_codes_arrondissements_municipaux, new_col_postal_codes_count_arrondissements_municipaux]
+            colnames=arrondissements_municipaux_colnames+[
+                new_col_postal_codes_arrondissements_municipaux,
+                new_col_postal_codes_count_arrondissements_municipaux, 
+                new_col_cluster_id_arrondissements_municipaux,
+                new_col_cluster_size_arrondissements_municipaux
+            ]
         )
     )
     logging.info("Added columns postal_codes and postal_codes_count to the communes and arrondissents_municipaux tables.")   
