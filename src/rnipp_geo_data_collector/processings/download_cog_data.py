@@ -2,18 +2,17 @@ import logging
 from pathlib import Path
 import duckdb
 
-from .config import AcquisitionConfig, ErrorHandlerConfig
-from .suppliers.insee.requests import OutputPathsRequestCOG, RequestCOGArrondissementMunicipal, RequestCOGCommune, RequestCOGDepartement, RequestsCOGCollectivitesOutremer, RequestsCOGDistrict, RequestsCOGPays
-from .suppliers.insee.checks.events_consistency import CheckEventsConsistencyAfterDownloadInseeCog
-from .suppliers.insee.checks.insee_code_overlap import CheckGlobalInseeCodeOverlapAfterDownloadInseeCog
-from .suppliers.insee.checks.parent_uri_exist import CheckParentURIsExistAfterDownloadInseeCog
-from .suppliers.insee.checks.parent_period_overlap import CheckParentPeriodOverlapAfterDownloadInseeCog
-from .suppliers.insee.checks.parent_period_no_gaps import CheckParentPeriodNoGapsAfterDownloadInseeCog
-from .suppliers.insee.checks.parent_period_include import CheckParentPeriodsContainChildPeriodAfterDownloadInseeCog
-from .suppliers.laposte.requests import RequestLaPosteHexasmal, OutputPathsRequestLaPosteHexasmal
+from ..acquisition.config import AcquisitionConfig, ErrorHandlerConfig
+from ..acquisition.suppliers.insee.requests import OutputPathsRequestCOG, RequestCOGArrondissementMunicipal, RequestCOGCommune, RequestCOGDepartement, RequestsCOGCollectivitesOutremer, RequestsCOGDistrict, RequestsCOGPays, RequestsCOGTerritoires
+from ..acquisition.suppliers.insee.checks.events_consistency import CheckEventsConsistencyAfterDownloadInseeCog
+from ..acquisition.suppliers.insee.checks.insee_code_overlap import CheckGlobalInseeCodeOverlapAfterDownloadInseeCog
+from ..acquisition.suppliers.insee.checks.parent_uri_exist import CheckParentURIsExistAfterDownloadInseeCog
+from ..acquisition.suppliers.insee.checks.parent_period_overlap import CheckParentPeriodOverlapAfterDownloadInseeCog
+from ..acquisition.suppliers.insee.checks.parent_period_no_gaps import CheckParentPeriodNoGapsAfterDownloadInseeCog
+from ..acquisition.suppliers.insee.checks.parent_period_include import CheckParentPeriodsContainChildPeriodAfterDownloadInseeCog
 from ..metadata import InfoCurrentStoredData, GeoCSVFileMetadata
 
-def download_geo_data(
+def download_cog_data(
     acquisition_config: AcquisitionConfig,
     exceptions_handler_config: ErrorHandlerConfig,
     duckdb_conn : duckdb.DuckDBPyConnection,
@@ -21,8 +20,7 @@ def download_geo_data(
     current_stored_data: InfoCurrentStoredData
 ) -> None:
     """Download data from supplied URLs."""
-    output_dir.mkdir(parents=True, exist_ok=True)
-    output_dir_insee = output_dir / "insee"
+    output_dir_insee = output_dir
     output_dir_insee.mkdir(parents=True, exist_ok=True)
     output_dir_insee_raw = output_dir_insee / "raw"
     output_dir_insee_raw.mkdir(parents=True, exist_ok=True)
@@ -104,6 +102,19 @@ def download_geo_data(
         output_paths = output_paths_pays,
         acquisition_config = acquisition_config.insee,
         exceptions_handler_config = exceptions_handler_config.insee.pays
+    )
+
+    filenames_territoires="territoires.csv"
+    output_paths_territoires = OutputPathsRequestCOG(
+        raw_entities=output_dir_insee_raw /  filenames_territoires,
+        add_or_replace_entities=output_dir_insee_add_or_replace / filenames_territoires,
+        remove_entities=output_dir_insee_remove / filenames_territoires,
+        cleaned_entities=output_dir_insee_cleaned / filenames_territoires
+    )
+    request_insee_territoires = RequestsCOGTerritoires(
+        output_paths = output_paths_territoires,
+        acquisition_config = acquisition_config.insee,
+        exceptions_handler_config = exceptions_handler_config.insee.territoires
     )
 
     logging.info(f"Downloading \"Communes\" data from COG")
@@ -239,13 +250,36 @@ def download_geo_data(
         )
     )
 
+    logging.info(f"Downloading \"Territoires\" data from COG")
+    try:
+        request_insee_territoires.send()
+    except Exception as e:
+        logging.error(f"Error downloading \"Territoires\" data: {e}")
+        raise RuntimeError(f"Failed to download \"Territoires\" data: {e}") from e
+    try:
+        request_insee_territoires.check_content(duckdb_conn = duckdb_conn)
+    except Exception as e:
+        logging.error(f"Error checking content of \"Territoires\" data: {e}")
+        raise RuntimeError(f"Failed to check content of \"Territoires\" data: {e}") from e
+    current_stored_data.add_data(
+        key='insee_territoire',
+        value=GeoCSVFileMetadata(
+            path=request_insee_territoires.output_paths.cleaned_entities,
+            header=True,
+            delim=',',
+            encoding='utf-8',
+            colnames=request_insee_territoires.colnames
+        )
+    )
+
     requests_insee_list = [
         request_insee_commune,
         request_insee_arrondissements_municipaux,
         request_insee_departements,
         request_insee_collectivites_outremer,
         request_insee_districts,
-        request_insee_pays
+        request_insee_pays,
+        request_insee_territoires
     ]
     
     logging.info(f"Check, for the \"Communes\" data, the existence of URIs of the parent geographic entities (department or overseas collectivity).")    
@@ -284,49 +318,4 @@ def download_geo_data(
     CheckEventsConsistencyAfterDownloadInseeCog().run(requests=requests_insee_list, duckdb_conn=duckdb_conn)
     logging.info(f"Verify that there are no overlapping periods for a given INSEE code (regardless of the type of geographical entity), i.e., that there are not two URIs associated with the same INSEE code whose validity periods intersect.")
     CheckGlobalInseeCodeOverlapAfterDownloadInseeCog().run(requests=requests_insee_list, duckdb_conn=duckdb_conn)
-
-    output_dir_laposte = output_dir / "laposte"
-    output_dir_laposte.mkdir(parents=True, exist_ok=True)
-    output_dir_laposte_raw = output_dir_laposte / "raw"
-    output_dir_laposte_raw.mkdir(parents=True, exist_ok=True)
-    output_dir_laposte_cleaned = output_dir_laposte / "cleaned"
-    output_dir_laposte_cleaned.mkdir(parents=True, exist_ok=True)
-    output_dir_laposte_remove = output_dir_laposte / "remove"
-    output_dir_laposte_remove.mkdir(parents=True, exist_ok=True)
-    output_dir_laposte_add = output_dir_laposte / "add"
-    output_dir_laposte_add.mkdir(parents=True, exist_ok=True)
-    
-    filenames_laposte = "laposte_hexasmal.csv"
-    request_laposte_hexasmal = RequestLaPosteHexasmal(
-            output_paths = OutputPathsRequestLaPosteHexasmal(
-                raw_entities=output_dir_laposte_raw /  filenames_laposte,
-                add_entities=output_dir_laposte_add / filenames_laposte,
-                remove_entities=output_dir_laposte_remove / filenames_laposte,
-                cleaned_entities=output_dir_laposte_cleaned / filenames_laposte
-            ),
-            exceptions_handler_config = exceptions_handler_config.laposte,
-            acquisition_config = acquisition_config.laposte
-    )
-    logging.info(f"Downloading \"La Poste Hexasmal\" data")
-    try:
-        request_laposte_hexasmal.send()
-    except Exception as e:
-        logging.error(f"Error downloading \"La Poste Hexasmal\" data: {e}")
-        raise RuntimeError(f"Failed to download \"La Poste Hexasmal\" data: {e}") from e
-    try:
-        request_laposte_hexasmal.check_content(duckdb_conn = duckdb_conn)
-    except Exception as e:
-        logging.error(f"Error checking content of \"La Poste Hexasmal\" data: {e}")
-        raise RuntimeError(f"Failed to check content of \"La Poste Hexasmal\" data: {e}") from e
-    current_stored_data.add_data(
-        key='laposte_hexasmal',
-        value=GeoCSVFileMetadata(
-            path=request_laposte_hexasmal.output_paths.cleaned_entities,
-            header=True,
-            delim=',',
-            encoding='utf-8',
-            colnames=request_laposte_hexasmal.colnames
-        )
-    )
-
     return None

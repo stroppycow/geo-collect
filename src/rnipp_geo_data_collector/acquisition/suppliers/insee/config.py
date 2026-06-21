@@ -73,6 +73,15 @@ class PaysInseeExceptionsToIgnoreOrCorrect(InseeExceptionsToIgnoreOrCorrectModel
         check_unique_uri([item.uri for item in self.root if isinstance(item, InseePaysAddOrReplace)])
         check_unique_uri([item.uri for item in self.root if isinstance(item, InseeGeoRemove)])
         return self
+    
+class TerritoiresInseeExceptionsToIgnoreOrCorrect(InseeExceptionsToIgnoreOrCorrectModel):
+    root: list[Union[InseePaysAddOrReplace, InseeGeoRemove]] = []
+
+    @model_validator(mode="after")
+    def unique_uri(self):
+        check_unique_uri([item.uri for item in self.root if isinstance(item, InseePaysAddOrReplace)])
+        check_unique_uri([item.uri for item in self.root if isinstance(item, InseeGeoRemove)])
+        return self
 
 
 class InseeExceptionsToIgnoreOrCorrect(BaseModel):
@@ -82,6 +91,7 @@ class InseeExceptionsToIgnoreOrCorrect(BaseModel):
     collectivites_outremer: CollectivitesDOutreMerInseeExceptionsToIgnoreOrCorrect = CollectivitesDOutreMerInseeExceptionsToIgnoreOrCorrect()
     districts: DistrictsInseeExceptionsToIgnoreOrCorrect = DistrictsInseeExceptionsToIgnoreOrCorrect()
     pays: PaysInseeExceptionsToIgnoreOrCorrect = PaysInseeExceptionsToIgnoreOrCorrect()
+    territoires: TerritoiresInseeExceptionsToIgnoreOrCorrect = TerritoiresInseeExceptionsToIgnoreOrCorrect()
 
 class InseeSupplierConfig(BaseModel):
     endpoint_url: str = "http://rdf.insee.fr/sparql"

@@ -11,7 +11,7 @@ import pystache
 import csv
 
 
-from .config import InseeSupplierConfig, InseeExceptionsToIgnoreOrCorrectModel, CommunesInseeExceptionsToIgnoreOrCorrect, ArrondissementsMunicipauxInseeExceptionsToIgnoreOrCorrect, DepartementsInseeExceptionsToIgnoreOrCorrect, CollectivitesDOutreMerInseeExceptionsToIgnoreOrCorrect, DistrictsInseeExceptionsToIgnoreOrCorrect, PaysInseeExceptionsToIgnoreOrCorrect
+from .config import InseeSupplierConfig, InseeExceptionsToIgnoreOrCorrectModel, CommunesInseeExceptionsToIgnoreOrCorrect, ArrondissementsMunicipauxInseeExceptionsToIgnoreOrCorrect, DepartementsInseeExceptionsToIgnoreOrCorrect, CollectivitesDOutreMerInseeExceptionsToIgnoreOrCorrect, DistrictsInseeExceptionsToIgnoreOrCorrect, PaysInseeExceptionsToIgnoreOrCorrect, TerritoiresInseeExceptionsToIgnoreOrCorrect
 from .checks.abstract import DataValidationAndConsistencyInseeCog
 from .checks.date_consistency import CheckDateConsistencyAfterDownloadInseeCog
 from .checks.insee_code_overlap import CheckInseeCodeOverlapAfterDownloadInseeCog
@@ -530,6 +530,62 @@ class RequestsCOGPays(RequestCOG):
             ],
             extra_controls = [
                 CheckPatternAfterDownloadInseeCog(colname="uri", pattern=r"^http://id.insee.fr/geo/pays/[0-9a-z]{8}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{12}$"),
+                CheckURIUnicityAfterDownloadInseeCog(),
+                CheckPatternAfterDownloadInseeCog(colname="insee_code", pattern=r"^99[0-9]{3}$"),
+                CheckPatternAfterDownloadInseeCog(colname="article_code", pattern=r"^[0-8X]$"),
+                CheckPatternAfterDownloadInseeCog(colname="iso3166alpha2_code", pattern=r"^([A-Z]{2})?$"),
+                CheckPatternAfterDownloadInseeCog(colname="iso3166alpha3_code", pattern=r"^([A-Z]{3})?$"),
+                CheckPatternAfterDownloadInseeCog(colname="iso3166num_code", pattern=r"^([0-9]{3})?$"),
+                CheckPatternAfterDownloadInseeCog(colname="start_event_uri", pattern=r"^http://id.insee.fr/geo/evenementGeographique/[0-9a-z]{8}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{12}$"),
+                CheckPatternAfterDownloadInseeCog(colname="end_event_uri", pattern=r"^(http://id.insee.fr/geo/evenementGeographique/[0-9a-z]{8}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{12})?$"),
+                CheckEventsUnequalAfterDownloadInseeCog(),
+                CheckStartDateAfterDownloadInseeCog(),
+                CheckEndDateAfterDownloadInseeCog(),
+                CheckEndEventConsistencyAfterDownloadInseeCog(),
+                CheckDateConsistencyAfterDownloadInseeCog(),
+                CheckInseeCodeOverlapAfterDownloadInseeCog()
+            ]
+        )
+
+
+class RequestsCOGTerritoires(RequestCOG):
+    """Class to query all territories from the COG"""
+    def __init__(
+            self,
+            output_paths: OutputPathsRequestCOG,
+            acquisition_config: InseeSupplierConfig = InseeSupplierConfig(),
+            exceptions_handler_config: TerritoiresInseeExceptionsToIgnoreOrCorrect = TerritoiresInseeExceptionsToIgnoreOrCorrect()
+        ):
+        super().__init__(
+            output_paths=output_paths,
+            request=Path(__file__).parent / "requests" / "territoires.rq",
+            description='"Territoires" (i.e. geopolitical sub-division of a country) data',
+            view_name="insee_territoires",
+            exceptions_handler_config=exceptions_handler_config,
+            acquisition_config=acquisition_config,
+            sql_templates= TemplatesSQLRequestCOG(
+                copy=Path(__file__).parent / "sql" / "territoires_copy.mustache.sql",
+                create_view=Path(__file__).parent / "sql" / "territoires_import.mustache.sql",
+                update=Path(__file__).parent / "sql" / "territoires_correct.mustache.sql"
+            ),
+            colnames=[
+                StringColumnDataType(name='uri'),
+                StringColumnDataType(name='insee_code'),
+                StringColumnDataType(name='label'),
+                StringColumnDataType(name='article_code'),
+                StringColumnDataType(name='long_label'),
+                StringColumnDataType(name='iso3166alpha2_code'),
+                StringColumnDataType(name='iso3166alpha3_code'),
+                StringColumnDataType(name='iso3166num_code'),
+                StringColumnDataType(name='start_event_uri'),
+                StringColumnDataType(name='end_event_uri'),
+                DateColumnDataType(name='start_date', format='%Y-%m-%d'),
+                DateColumnDataType(name='end_date', format='%Y-%m-%d'),
+                IntegerColumnDataType(name='start_date_count'),
+                IntegerColumnDataType(name='end_date_count')
+            ],
+            extra_controls = [
+                CheckPatternAfterDownloadInseeCog(colname="uri", pattern=r"^http://id.insee.fr/geo/territoire/[0-9a-z]{8}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{12}$"),
                 CheckURIUnicityAfterDownloadInseeCog(),
                 CheckPatternAfterDownloadInseeCog(colname="insee_code", pattern=r"^99[0-9]{3}$"),
                 CheckPatternAfterDownloadInseeCog(colname="article_code", pattern=r"^[0-8X]$"),

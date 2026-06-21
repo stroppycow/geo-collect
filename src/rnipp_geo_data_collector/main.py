@@ -5,7 +5,9 @@ import logging
 
 
 from .acquisition.config import AcquisitionConfig, ErrorHandlerConfig
-from .acquisition.download import download_geo_data
+
+from .processings.download_cog_data import download_cog_data
+from .processings.download_laposte_data import download_laposte_data
 from .processings.metropolitan_france_dummy_correction import correct_metropolitan_france_dummy
 from .processings.communes_typology import typologize_communes
 from .processings.postal_codes_merge import merge_postal_codes
@@ -73,25 +75,38 @@ def collect_geo_data(
         exceptions_handler_config = ErrorHandlerConfig.from_file(exceptions_handler_config_file)
 
     current_stored_data = InfoCurrentStoredData()
-    # Download geo data
+    # Download COG data
     try:
-        download_geo_data(
+        download_cog_data(
             acquisition_config = acquisition_config,
             exceptions_handler_config = exceptions_handler_config,
             duckdb_conn = duckdb_connection,
-            output_dir = working_directory_path / 'download',
+            output_dir = working_directory_path / '01_processing',
             current_stored_data = current_stored_data
         )
     except Exception as e:
         duckdb_connection.close()
-        logging.error(f"Failed to download geo data: {e}")
-        raise RuntimeError(f"Failed to download geo data: {e}") from e
+        logging.error(f"Failed to download COG data: {e}")
+        raise RuntimeError(f"Failed to download COG data: {e}") from e
+
+    try:
+        download_laposte_data(
+            acquisition_config = acquisition_config,
+            exceptions_handler_config = exceptions_handler_config,
+            duckdb_conn = duckdb_connection,
+            output_dir = working_directory_path / '02_processing',
+            current_stored_data = current_stored_data
+        )
+    except Exception as e:
+        duckdb_connection.close()
+        logging.error(f"Failed to download LaPoste data: {e}")
+        raise RuntimeError(f"Failed to download LaPoste data: {e}") from e
     
     try:
         correct_metropolitan_france_dummy(
             duckdb_connection=duckdb_connection,
             current_stored_data=current_stored_data,
-            output_dir=working_directory_path / '01_processing'
+            output_dir=working_directory_path / '03_processing'
         )
     except Exception as e:
         duckdb_connection.close()
@@ -102,7 +117,7 @@ def collect_geo_data(
         typologize_communes(
             duckdb_connection=duckdb_connection,
             current_stored_data=current_stored_data,
-            output_dir=working_directory_path / '02_processing'
+            output_dir=working_directory_path / '04_processing'
         )
     except Exception as e:
         duckdb_connection.close()
@@ -113,7 +128,7 @@ def collect_geo_data(
         merge_postal_codes(
             duckdb_connection=duckdb_connection,
             current_stored_data=current_stored_data,
-            output_dir=working_directory_path / '03_processing'
+            output_dir=working_directory_path / '05_processing'
         )
     except Exception as e:
         duckdb_connection.close()
