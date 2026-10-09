@@ -48,3 +48,9 @@ geo_data_collector = "rnipp_geo_data_collector.cli:app"
 dev = [
     "ipykernel (>=7.2.0,<8.0.0)"
 ]
+
+[tool.ruff.lint]
+# EM101/EM102 (message d'exception en littéral/f-string) et TRY003 (message
+# long hors de la classe d'exception) sont trop contraignants pour des
+# messages d'erreur utiles à l'utilisateur.
+ignore = ["EM101", "EM102", "TRY003"]
