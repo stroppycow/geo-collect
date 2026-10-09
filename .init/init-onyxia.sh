@@ -1,6 +1,12 @@
 #!/bin/bash
 
+curl -LsSf https://mistral.ai/vibe/install.sh | bash
+echo 'export PATH="/home/onyxia/.local/bin:$PATH"' >> ~/.bashrc
+echo 'export MISTRAL_API_KEY=$OPENAI_API_KEY' >> ~/.bashrc
 
+
+
+cd  $HOME/work/geo-collect/
 python -m venv .venv
 source .venv/bin/activate
 python -m pip install --upgrade pip
@@ -22,7 +28,7 @@ fi
 jq '. + {
     "workbench.colorTheme": "Default Dark Modern",  # Set the theme
     "editor.rulers": [120],  # Add specific vertical rulers
- "python.terminal.activateEnvironment": true,
+    "python.terminal.activateEnvironment": true,
     "files.trimTrailingWhitespace": true, # Automatically trim trailing whitespace
     "files.insertFinalNewline": true, # Ensure files end with a newline
     "flake8.args": [
@@ -41,9 +47,6 @@ jq '. + {
     }
 }' "$SETTINGS_FILE" > "$SETTINGS_FILE.tmp" && mv "$SETTINGS_FILE.tmp" "$SETTINGS_FILE"
 
-curl -LsSf https://mistral.ai/vibe/install.sh | bash
-
-echo 'export PATH="/home/onyxia/.local/bin:$PATH"' >> ~/.bashrc
 
 echo 'if [ -f "$PWD/.venv/bin/activate" ]; then source "$PWD/.venv/bin/activate"; fi' >> ~/.bashrc
 
