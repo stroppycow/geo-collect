@@ -77,7 +77,7 @@ class RequestLaPosteHexasmal:
         self,
         output_paths: OutputPathsRequestLaPosteHexasmal,
         exceptions_handler_config: LaPosteExceptionsToIgnoreOrCorrect,
-        acquisition_config: LaPosteSupplierConfig = LaPosteSupplierConfig(),
+        acquisition_config: LaPosteSupplierConfig,
     ):
         self.output_paths = output_paths
         self.view_name = "laposte_hexasmal"
@@ -154,8 +154,8 @@ class RequestLaPosteHexasmal:
             raise TimeoutError("Timeout occurred while querying La Poste") from e
         except requests.exceptions.ConnectionError as e:
             raise ConnectionError("Connection error while querying La Poste") from e
-        except requests.exceptions.HTTPError as e:
-            raise e
+        except requests.exceptions.HTTPError:
+            raise
         except requests.exceptions.RequestException as e:
             raise RuntimeError("Request error while querying La Poste") from e
         except Exception as e:

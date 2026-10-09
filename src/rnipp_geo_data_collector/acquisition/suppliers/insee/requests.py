@@ -1,41 +1,58 @@
-from pathlib import Path
-from typing import Union, Optional
-from abc import ABC
-from urllib.parse import quote_plus
-import requests
-from urllib3.util.retry import Retry
-from requests.adapters import HTTPAdapter
-from duckdb import DuckDBPyConnection
-import logging
-import pystache
 import csv
+import logging
+from abc import ABC
+from pathlib import Path
+from typing import ClassVar
+from urllib.parse import quote_plus
 
+import pystache
+import requests
+from duckdb import DuckDBPyConnection
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
 
-from .config import InseeSupplierConfig, InseeExceptionsToIgnoreOrCorrectModel, CommunesInseeExceptionsToIgnoreOrCorrect, ArrondissementsMunicipauxInseeExceptionsToIgnoreOrCorrect, DepartementsInseeExceptionsToIgnoreOrCorrect, CollectivitesDOutreMerInseeExceptionsToIgnoreOrCorrect, DistrictsInseeExceptionsToIgnoreOrCorrect, PaysInseeExceptionsToIgnoreOrCorrect, TerritoiresInseeExceptionsToIgnoreOrCorrect
+from ....metadata import (
+    BooleanColumnDataType,
+    ColumnDataType,
+    DateColumnDataType,
+    IntegerColumnDataType,
+    StringColumnDataType,
+    StringListColumnDataType,
+)
 from .checks.abstract import DataValidationAndConsistencyInseeCog
+from .checks.apply_update import InseeGeoAddOrReplace, InseeGeoRemove
 from .checks.date_consistency import CheckDateConsistencyAfterDownloadInseeCog
-from .checks.insee_code_overlap import CheckInseeCodeOverlapAfterDownloadInseeCog
-from .checks.parsing import CheckParsingAfterDownloadInseeCog
-from .checks.start_date import CheckStartDateAfterDownloadInseeCog
 from .checks.end_date import CheckEndDateAfterDownloadInseeCog
-from .checks.pattern import CheckPatternAfterDownloadInseeCog
-from .checks.uri_unicity import CheckURIUnicityAfterDownloadInseeCog
 from .checks.end_event_consistency import CheckEndEventConsistencyAfterDownloadInseeCog
 from .checks.events_unequal import CheckEventsUnequalAfterDownloadInseeCog
-from .checks.apply_update import InseeGeoRemove, InseeGeoAddOrReplace
+from .checks.insee_code_overlap import CheckInseeCodeOverlapAfterDownloadInseeCog
 from .checks.not_null import CheckNotNullAfterDownloadInseeCog
-from ....metadata import ColumnDataType, StringColumnDataType, StringListColumnDataType, BooleanColumnDataType, DateColumnDataType, IntegerColumnDataType
+from .checks.parsing import CheckParsingAfterDownloadInseeCog
+from .checks.pattern import CheckPatternAfterDownloadInseeCog
+from .checks.start_date import CheckStartDateAfterDownloadInseeCog
+from .checks.uri_unicity import CheckURIUnicityAfterDownloadInseeCog
+from .config import (
+    ArrondissementsMunicipauxInseeExceptionsToIgnoreOrCorrect,
+    CollectivitesDOutreMerInseeExceptionsToIgnoreOrCorrect,
+    CommunesInseeExceptionsToIgnoreOrCorrect,
+    DepartementsInseeExceptionsToIgnoreOrCorrect,
+    DistrictsInseeExceptionsToIgnoreOrCorrect,
+    InseeExceptionsToIgnoreOrCorrectModel,
+    InseeSupplierConfig,
+    PaysInseeExceptionsToIgnoreOrCorrect,
+    TerritoiresInseeExceptionsToIgnoreOrCorrect,
+)
 
 logger = logging.getLogger(__name__)
 
 
 class TemplatesSQLRequestCOG:
     def __init__(
-            self,
-            copy: Union[str, Path],
-            create_view: Union[str, Path],
-            update: Union[str, Path],
-        ):
+        self,
+        copy: str | Path,
+        create_view: str | Path,
+        update: str | Path,
+    ):
         if isinstance(copy, str):
             self.copy = Path(copy)
         else:
@@ -49,14 +66,15 @@ class TemplatesSQLRequestCOG:
         else:
             self.update = update
 
+
 class OutputPathsRequestCOG:
     def __init__(
-            self,
-            raw_entities: Union[str, Path],
-            add_or_replace_entities: Union[str, Path],
-            remove_entities: Union[str, Path],
-            cleaned_entities: Union[str, Path]
-        ):
+        self,
+        raw_entities: str | Path,
+        add_or_replace_entities: str | Path,
+        remove_entities: str | Path,
+        cleaned_entities: str | Path,
+    ):
         if isinstance(raw_entities, str):
             self.raw_entities = Path(raw_entities)
         else:
@@ -76,22 +94,27 @@ class OutputPathsRequestCOG:
 
 
 class RequestCOG(ABC):
-    """Abstract base class for querying the Official geographic code alias COG (Code officiel géographique)"""
-    headers = {"Content-type": "application/x-www-form-urlencoded"}
+    """
+    Abstract base class for querying the Official geographic
+    code alias COG (Code officiel géographique)
+    """
+
+    headers: ClassVar[dict[str, str]] = {
+        "Content-type": "application/x-www-form-urlencoded"
+    }
 
     def __init__(
-            self,
-            output_paths: OutputPathsRequestCOG,
-            request: Union[str, Path],
-            description: str,
-            view_name: str,
-            exceptions_handler_config: InseeExceptionsToIgnoreOrCorrectModel,
-            sql_templates: TemplatesSQLRequestCOG,
-            acquisition_config: InseeSupplierConfig = InseeSupplierConfig(),
-            colnames: list[ColumnDataType] = [],
-            extra_controls: list[DataValidationAndConsistencyInseeCog] = []
-            
-        ):
+        self,
+        output_paths: OutputPathsRequestCOG,
+        request: str | Path,
+        description: str,
+        view_name: str,
+        exceptions_handler_config: InseeExceptionsToIgnoreOrCorrectModel,
+        sql_templates: TemplatesSQLRequestCOG,
+        acquisition_config: InseeSupplierConfig,
+        colnames: list[ColumnDataType],
+        extra_controls: list[DataValidationAndConsistencyInseeCog],
+    ):
         self.output_paths = output_paths
         self.request = request
         self.description = description
@@ -103,19 +126,18 @@ class RequestCOG(ABC):
         self.extra_controls = extra_controls
 
     def send(self) -> None:
-        request_str : Optional[str] = None
+        request_str: str | None = None
 
-        if isinstance(self.request, Path) or isinstance(self.request, str):
+        if isinstance(self.request, (Path, str)):
             try:
-                
-                with open(self.request, 'r', encoding='utf-8') as file:
+                with open(self.request, "r", encoding="utf-8") as file:
                     request_str = file.read()
             except Exception as e:
                 raise RuntimeError(f"Failed to read file {self.request}") from e
         else:
             if Path(self.request).exists():
                 try:
-                    with open(self.request, 'r', encoding='utf-8') as file:
+                    with open(self.request, "r", encoding="utf-8") as file:
                         request_str = file.read()
                 except Exception as e:
                     raise RuntimeError(f"Failed to read file {self.request}") from e
@@ -127,7 +149,7 @@ class RequestCOG(ABC):
                 total=self.acquisition_config.max_retries,
                 backoff_factor=self.acquisition_config.backoff_factor,
                 status_forcelist=[408, 429, 500, 502, 503, 504],
-                redirect=0
+                redirect=0,
             )
             adapter = HTTPAdapter(max_retries=retry_strategy)
             session = requests.Session()
@@ -135,66 +157,100 @@ class RequestCOG(ABC):
             session.mount("http://", adapter)
             with session.post(
                 url=self.acquisition_config.endpoint_url,
-                data="format=text/csv&query="+quote_plus(request_str),
+                data="format=text/csv&query=" + quote_plus(request_str),
                 headers=RequestCOG.headers,
-                timeout=(self.acquisition_config.read_timeout, self.acquisition_config.connect_timeout)
+                timeout=(
+                    self.acquisition_config.read_timeout,
+                    self.acquisition_config.connect_timeout,
+                ),
             ) as response:
                 if response.status_code != 200:
-                    raise requests.exceptions.HTTPError(f"HTTP error while querying {self.description} from COG: {response.status_code} - {response.text}")
-                
+                    raise requests.exceptions.HTTPError(
+                        f"HTTP error while querying {self.description} from COG: "
+                        f"{response.status_code} - {response.text}"
+                    )
+
                 if not self.output_paths.raw_entities.parent.exists():
-                    self.output_paths.raw_entities.parent.mkdir(parents=True, exist_ok=True)
+                    self.output_paths.raw_entities.parent.mkdir(
+                        parents=True, exist_ok=True
+                    )
                 if self.output_paths.raw_entities.exists():
-                   self.output_paths.raw_entities.unlink()
+                    self.output_paths.raw_entities.unlink()
 
                 with open(self.output_paths.raw_entities, "wb") as foutput:
                     for chunk in response.iter_content(chunk_size=8192):
                         if chunk:
                             foutput.write(chunk)
 
-
         except requests.exceptions.Timeout as e:
-            raise TimeoutError(f"Timeout occurred while querying {self.description}") from e
+            raise TimeoutError(
+                f"Timeout occurred while querying {self.description}"
+            ) from e
         except requests.exceptions.ConnectionError as e:
-            raise ConnectionError(f"Connection error while querying {self.description}") from e
-        except requests.exceptions.HTTPError as e:
-            raise e
-        except requests.exceptions.RequestException  as e:
-            raise RuntimeError(f"Request error while querying {self.description}") from e
+            raise ConnectionError(
+                f"Connection error while querying {self.description}"
+            ) from e
+        except requests.exceptions.HTTPError:
+            raise
+        except requests.exceptions.RequestException as e:
+            raise RuntimeError(
+                f"Request error while querying {self.description}"
+            ) from e
         except Exception as e:
-            raise RuntimeError(f"Unexpected error while querying {self.description}") from e
-        
+            raise RuntimeError(
+                f"Unexpected error while querying {self.description}"
+            ) from e
+
     def apply_updates(self, duckdb_conn: DuckDBPyConnection):
         """Apply updates before checks"""
-        uri_add_or_update_list = [exception for exception in self.exceptions_handler_config.root if isinstance(exception, InseeGeoAddOrReplace)]
-        
+        uri_add_or_update_list = [
+            exception
+            for exception in self.exceptions_handler_config.root
+            if isinstance(exception, InseeGeoAddOrReplace)
+        ]
+
         if not self.output_paths.add_or_replace_entities.parent.exists():
-            self.output_paths.add_or_replace_entities.parent.mkdir(parents=True, exist_ok=True)
+            self.output_paths.add_or_replace_entities.parent.mkdir(
+                parents=True, exist_ok=True
+            )
         if self.output_paths.add_or_replace_entities.exists():
             self.output_paths.add_or_replace_entities.unlink()
-        
-        with open(self.output_paths.add_or_replace_entities, mode="w", newline="", encoding="utf-8") as f_add_or_replace:
+
+        with open(
+            self.output_paths.add_or_replace_entities,
+            mode="w",
+            newline="",
+            encoding="utf-8",
+        ) as f_add_or_replace:
             fieldnames_add_or_replace = [x.name for x in self.colnames]
-            writer_add_or_replace = csv.DictWriter(f_add_or_replace, fieldnames=fieldnames_add_or_replace)
+            writer_add_or_replace = csv.DictWriter(
+                f_add_or_replace, fieldnames=fieldnames_add_or_replace
+            )
             writer_add_or_replace.writeheader()
             for exception in uri_add_or_update_list:
                 writer_add_or_replace.writerow(exception.to_dict_csv_export())
-       
-        uri_removal_list = [exception for exception in self.exceptions_handler_config.root if isinstance(exception, InseeGeoRemove)]
+
+        uri_removal_list = [
+            exception
+            for exception in self.exceptions_handler_config.root
+            if isinstance(exception, InseeGeoRemove)
+        ]
 
         if not self.output_paths.remove_entities.parent.exists():
             self.output_paths.remove_entities.parent.mkdir(parents=True, exist_ok=True)
         if self.output_paths.remove_entities.exists():
             self.output_paths.remove_entities.unlink()
 
-        with open(self.output_paths.remove_entities, mode="w", newline="", encoding="utf-8") as f_remove:
-            fieldnames_remove = ['uri']
+        with open(
+            self.output_paths.remove_entities, mode="w", newline="", encoding="utf-8"
+        ) as f_remove:
+            fieldnames_remove = ["uri"]
             writer_remove = csv.DictWriter(f_remove, fieldnames=fieldnames_remove)
             writer_remove.writeheader()
             for exception in uri_removal_list:
-                writer_remove.writerow({'uri': exception.uri})
-        
-        output_path_tmp =  self.output_paths.cleaned_entities.with_suffix(".tmp")
+                writer_remove.writerow({"uri": exception.uri})
+
+        output_path_tmp = self.output_paths.cleaned_entities.with_suffix(".tmp")
         if not self.output_paths.cleaned_entities.parent.exists():
             self.output_paths.cleaned_entities.parent.mkdir(parents=True, exist_ok=True)
         if output_path_tmp.exists():
@@ -202,53 +258,71 @@ class RequestCOG(ABC):
 
         context_apply_updates: dict[str, str] = {
             "view_name": self.view_name,
-            "path_add_or_replace": str(self.output_paths.add_or_replace_entities.resolve()),
+            "path_add_or_replace": str(
+                self.output_paths.add_or_replace_entities.resolve()
+            ),
             "path_remove": str(self.output_paths.remove_entities.resolve()),
-            "output_path": str(output_path_tmp.resolve())
+            "output_path": str(output_path_tmp.resolve()),
         }
 
         renderer_apply_updates = pystache.Renderer(escape=lambda s: s)
         try:
-            with open(self.sql_templates.update, 'r', encoding='utf-8') as template_apply_updates_path:
+            with open(
+                self.sql_templates.update, "r", encoding="utf-8"
+            ) as template_apply_updates_path:
                 template_apply_updates_content = template_apply_updates_path.read()
         except Exception as e:
-            raise RuntimeError(f"Failed to load template file {self.sql_templates.update}") from e
-        
+            raise RuntimeError(
+                f"Failed to load template file {self.sql_templates.update}"
+            ) from e
+
         try:
-            renderer_apply_updates_str = renderer_apply_updates.render(template_apply_updates_content, context_apply_updates)
+            renderer_apply_updates_str = renderer_apply_updates.render(
+                template_apply_updates_content, context_apply_updates
+            )
         except Exception as e:
-            raise RuntimeError(f"Failed to render template file {self.sql_templates.update}") from e
-        
+            raise RuntimeError(
+                f"Failed to render template file {self.sql_templates.update}"
+            ) from e
+
         try:
             duckdb_conn.execute(renderer_apply_updates_str)
             if self.output_paths.cleaned_entities.exists():
                 self.output_paths.cleaned_entities.unlink()
             output_path_tmp.replace(self.output_paths.cleaned_entities)
         except Exception as e:
-            raise RuntimeError(f"Failed to execute SQL script {self.sql_templates.update}") from e 
-               
-        
-    def check_content(self, duckdb_conn : DuckDBPyConnection) -> None:
+            raise RuntimeError(
+                f"Failed to execute SQL script {self.sql_templates.update}"
+            ) from e
+
+    def check_content(self, duckdb_conn: DuckDBPyConnection) -> None:
         """Check if the content of the file is valid"""
         logger.info(f"Checking content of {self.description} after downloading")
-        controls: list[DataValidationAndConsistencyInseeCog] = [CheckParsingAfterDownloadInseeCog()]
+        controls: list[DataValidationAndConsistencyInseeCog] = [
+            CheckParsingAfterDownloadInseeCog()
+        ]
         controls.extend(self.extra_controls)
         nb_controls = len(controls)
         if nb_controls == 0:
             logger.info(f"No control to run for {self.description} after downloading")
         for current_step, control in enumerate(controls):
-            logger.info(f"Running check {current_step+1}/{nb_controls}: {type(control).__name__}")
+            logger.info(
+                f"Running check {current_step + 1}/{nb_controls}: "
+                f"{type(control).__name__}"
+            )
             control.run(request=self, duckdb_conn=duckdb_conn)
         logger.info(f"All checks passed for {self.description} after downloading")
 
+
 class RequestCOGCommune(RequestCOG):
     """Class to query all communes from the COG"""
+
     def __init__(
-            self,
-            output_paths: OutputPathsRequestCOG,
-            acquisition_config: InseeSupplierConfig = InseeSupplierConfig(),
-            exceptions_handler_config: CommunesInseeExceptionsToIgnoreOrCorrect = CommunesInseeExceptionsToIgnoreOrCorrect()
-        ):
+        self,
+        output_paths: OutputPathsRequestCOG,
+        acquisition_config: InseeSupplierConfig,
+        exceptions_handler_config: CommunesInseeExceptionsToIgnoreOrCorrect,
+    ):
         super().__init__(
             output_paths=output_paths,
             request=Path(__file__).parent / "requests" / "communes.rq",
@@ -256,252 +330,358 @@ class RequestCOGCommune(RequestCOG):
             view_name="insee_communes",
             exceptions_handler_config=exceptions_handler_config,
             acquisition_config=acquisition_config,
-            sql_templates= TemplatesSQLRequestCOG(
+            sql_templates=TemplatesSQLRequestCOG(
                 copy=Path(__file__).parent / "sql" / "communes_copy.mustache.sql",
-                create_view=Path(__file__).parent / "sql" / "communes_import.mustache.sql",
-                update=Path(__file__).parent / "sql" / "communes_correct.mustache.sql"
+                create_view=Path(__file__).parent
+                / "sql"
+                / "communes_import.mustache.sql",
+                update=Path(__file__).parent / "sql" / "communes_correct.mustache.sql",
             ),
             colnames=[
-                StringColumnDataType(name='uri'),
-                StringColumnDataType(name='insee_code'),
-                StringColumnDataType(name='label'),
-                StringColumnDataType(name='article_code'),
-                StringListColumnDataType(name='parent_uri', sep='|'),
-                StringColumnDataType(name='start_event_uri'),
-                StringColumnDataType(name='end_event_uri'),
-                DateColumnDataType(name='start_date', format='%Y-%m-%d'),
-                DateColumnDataType(name='end_date', format='%Y-%m-%d'),
-                IntegerColumnDataType(name='parent_uri_count'),
-                IntegerColumnDataType(name='start_date_count'),
-                IntegerColumnDataType(name='end_date_count')
+                StringColumnDataType(name="uri"),
+                StringColumnDataType(name="insee_code"),
+                StringColumnDataType(name="label"),
+                StringColumnDataType(name="article_code"),
+                StringListColumnDataType(name="parent_uri", sep="|"),
+                StringColumnDataType(name="start_event_uri"),
+                StringColumnDataType(name="end_event_uri"),
+                DateColumnDataType(name="start_date", format="%Y-%m-%d"),
+                DateColumnDataType(name="end_date", format="%Y-%m-%d"),
+                IntegerColumnDataType(name="parent_uri_count"),
+                IntegerColumnDataType(name="start_date_count"),
+                IntegerColumnDataType(name="end_date_count"),
             ],
-            extra_controls = [
-                CheckPatternAfterDownloadInseeCog(colname="uri", pattern=r"^http://id.insee.fr/geo/commune/[0-9a-z]{8}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{12}$"),
+            extra_controls=[
+                CheckPatternAfterDownloadInseeCog(
+                    colname="uri",
+                    pattern=r"^http://id.insee.fr/geo/commune/[0-9a-z]{8}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{12}$",
+                ),
                 CheckURIUnicityAfterDownloadInseeCog(),
-                CheckPatternAfterDownloadInseeCog(colname="insee_code", pattern=r"^(0[1-9]|[1-8][0-9]|9[0-8]|2[AB])[0-9]{3}$"),
-                CheckPatternAfterDownloadInseeCog(colname="article_code", pattern=r"^[0-8X]$"),
-                CheckPatternAfterDownloadInseeCog(colname="parent_uri", pattern=r"^(http://id.insee.fr/geo/(departement|collectiviteDOutreMer)/[0-9a-z]{8}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{12})([|]http://id.insee.fr/geo/(departement|collectiviteDOutreMer)/[0-9a-z]{8}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{12})*$"),
-                CheckPatternAfterDownloadInseeCog(colname="start_event_uri", pattern=r"^http://id.insee.fr/geo/evenementGeographique/[0-9a-z]{8}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{12}$"),
-                CheckPatternAfterDownloadInseeCog(colname="end_event_uri", pattern=r"^(http://id.insee.fr/geo/evenementGeographique/[0-9a-z]{8}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{12})?$"),
+                CheckPatternAfterDownloadInseeCog(
+                    colname="insee_code",
+                    pattern=r"^(0[1-9]|[1-8][0-9]|9[0-8]|2[AB])[0-9]{3}$",
+                ),
+                CheckPatternAfterDownloadInseeCog(
+                    colname="article_code", pattern=r"^[0-8X]$"
+                ),
+                CheckPatternAfterDownloadInseeCog(
+                    colname="parent_uri",
+                    pattern=r"^(http://id.insee.fr/geo/(departement|collectiviteDOutreMer)/[0-9a-z]{8}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{12})([|]http://id.insee.fr/geo/(departement|collectiviteDOutreMer)/[0-9a-z]{8}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{12})*$",
+                ),
+                CheckPatternAfterDownloadInseeCog(
+                    colname="start_event_uri",
+                    pattern=r"^http://id.insee.fr/geo/evenementGeographique/[0-9a-z]{8}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{12}$",
+                ),
+                CheckPatternAfterDownloadInseeCog(
+                    colname="end_event_uri",
+                    pattern=r"^(http://id.insee.fr/geo/evenementGeographique/[0-9a-z]{8}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{12})?$",
+                ),
                 CheckEventsUnequalAfterDownloadInseeCog(),
                 CheckStartDateAfterDownloadInseeCog(),
                 CheckEndDateAfterDownloadInseeCog(),
                 CheckEndEventConsistencyAfterDownloadInseeCog(),
                 CheckDateConsistencyAfterDownloadInseeCog(),
-                CheckInseeCodeOverlapAfterDownloadInseeCog()
-            ]
+                CheckInseeCodeOverlapAfterDownloadInseeCog(),
+            ],
         )
-       
+
 
 class RequestCOGArrondissementMunicipal(RequestCOG):
     """Class to query all municipal arrondissements from the COG"""
+
     def __init__(
-            self,
-            output_paths: OutputPathsRequestCOG,
-            acquisition_config: InseeSupplierConfig = InseeSupplierConfig(),
-            exceptions_handler_config: ArrondissementsMunicipauxInseeExceptionsToIgnoreOrCorrect = ArrondissementsMunicipauxInseeExceptionsToIgnoreOrCorrect()
-        ):
+        self,
+        output_paths: OutputPathsRequestCOG,
+        acquisition_config: InseeSupplierConfig,
+        exceptions_handler_config: (
+            ArrondissementsMunicipauxInseeExceptionsToIgnoreOrCorrect
+        ),
+    ):
         super().__init__(
             output_paths=output_paths,
-            request=Path(__file__).parent / "requests" /  "arrondissements_municipaux.rq",
+            request=Path(__file__).parent
+            / "requests"
+            / "arrondissements_municipaux.rq",
             description='"Arrondissements municipaux" data',
             view_name="insee_arrondissements_municipaux",
             exceptions_handler_config=exceptions_handler_config,
             acquisition_config=acquisition_config,
-            sql_templates= TemplatesSQLRequestCOG(
-                copy=Path(__file__).parent / "sql" / "arrondissements_municipaux_copy.mustache.sql",
-                create_view=Path(__file__).parent / "sql" / "arrondissements_municipaux_import.mustache.sql",
-                update=Path(__file__).parent / "sql" / "arrondissements_municipaux_correct.mustache.sql"
+            sql_templates=TemplatesSQLRequestCOG(
+                copy=Path(__file__).parent
+                / "sql"
+                / "arrondissements_municipaux_copy.mustache.sql",
+                create_view=Path(__file__).parent
+                / "sql"
+                / "arrondissements_municipaux_import.mustache.sql",
+                update=Path(__file__).parent
+                / "sql"
+                / "arrondissements_municipaux_correct.mustache.sql",
             ),
             colnames=[
-                StringColumnDataType(name='uri'),
-                StringColumnDataType(name='insee_code'),
-                StringColumnDataType(name='label'),
-                StringColumnDataType(name='article_code'),
-                StringListColumnDataType(name='parent_uri', sep='|'),
-                StringColumnDataType(name='start_event_uri'),
-                StringColumnDataType(name='end_event_uri'),
-                DateColumnDataType(name='start_date', format='%Y-%m-%d'),
-                DateColumnDataType(name='end_date', format='%Y-%m-%d'),
-                IntegerColumnDataType(name='parent_uri_count'),
-                IntegerColumnDataType(name='start_date_count'),
-                IntegerColumnDataType(name='end_date_count')
+                StringColumnDataType(name="uri"),
+                StringColumnDataType(name="insee_code"),
+                StringColumnDataType(name="label"),
+                StringColumnDataType(name="article_code"),
+                StringListColumnDataType(name="parent_uri", sep="|"),
+                StringColumnDataType(name="start_event_uri"),
+                StringColumnDataType(name="end_event_uri"),
+                DateColumnDataType(name="start_date", format="%Y-%m-%d"),
+                DateColumnDataType(name="end_date", format="%Y-%m-%d"),
+                IntegerColumnDataType(name="parent_uri_count"),
+                IntegerColumnDataType(name="start_date_count"),
+                IntegerColumnDataType(name="end_date_count"),
             ],
-            extra_controls = [
-                CheckPatternAfterDownloadInseeCog(colname="uri", pattern=r"^http://id.insee.fr/geo/arrondissementMunicipal/[0-9a-z]{8}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{12}$"),
+            extra_controls=[
+                CheckPatternAfterDownloadInseeCog(
+                    colname="uri",
+                    pattern=r"^http://id.insee.fr/geo/arrondissementMunicipal/[0-9a-z]{8}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{12}$",
+                ),
                 CheckURIUnicityAfterDownloadInseeCog(),
-                CheckPatternAfterDownloadInseeCog(colname="insee_code", pattern=r"^(13|69|75)[0-9]{3}$"),
-                CheckPatternAfterDownloadInseeCog(colname="article_code", pattern=r"^[0-8X]$"),
-                CheckPatternAfterDownloadInseeCog(colname="parent_uri", pattern=r"^(http://id.insee.fr/geo/commune/[0-9a-z]{8}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{12})([|]http://id.insee.fr/geo/commune/[0-9a-z]{8}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{12})*$"),
-                CheckPatternAfterDownloadInseeCog(colname="start_event_uri", pattern=r"^http://id.insee.fr/geo/evenementGeographique/[0-9a-z]{8}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{12}$"),
-                CheckPatternAfterDownloadInseeCog(colname="end_event_uri", pattern=r"^(http://id.insee.fr/geo/evenementGeographique/[0-9a-z]{8}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{12})?$"),
+                CheckPatternAfterDownloadInseeCog(
+                    colname="insee_code", pattern=r"^(13|69|75)[0-9]{3}$"
+                ),
+                CheckPatternAfterDownloadInseeCog(
+                    colname="article_code", pattern=r"^[0-8X]$"
+                ),
+                CheckPatternAfterDownloadInseeCog(
+                    colname="parent_uri",
+                    pattern=r"^(http://id.insee.fr/geo/commune/[0-9a-z]{8}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{12})([|]http://id.insee.fr/geo/commune/[0-9a-z]{8}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{12})*$",
+                ),
+                CheckPatternAfterDownloadInseeCog(
+                    colname="start_event_uri",
+                    pattern=r"^http://id.insee.fr/geo/evenementGeographique/[0-9a-z]{8}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{12}$",
+                ),
+                CheckPatternAfterDownloadInseeCog(
+                    colname="end_event_uri",
+                    pattern=r"^(http://id.insee.fr/geo/evenementGeographique/[0-9a-z]{8}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{12})?$",
+                ),
                 CheckEventsUnequalAfterDownloadInseeCog(),
                 CheckStartDateAfterDownloadInseeCog(),
                 CheckEndDateAfterDownloadInseeCog(),
                 CheckEndEventConsistencyAfterDownloadInseeCog(),
                 CheckDateConsistencyAfterDownloadInseeCog(),
-                CheckInseeCodeOverlapAfterDownloadInseeCog()
-            ]
+                CheckInseeCodeOverlapAfterDownloadInseeCog(),
+            ],
         )
+
 
 class RequestCOGDepartement(RequestCOG):
     """Class to query all departments from the COG"""
+
     def __init__(
-            self,
-            output_paths: OutputPathsRequestCOG,
-            acquisition_config: InseeSupplierConfig = InseeSupplierConfig(),
-            exceptions_handler_config: DepartementsInseeExceptionsToIgnoreOrCorrect = DepartementsInseeExceptionsToIgnoreOrCorrect()
-        ):
+        self,
+        output_paths: OutputPathsRequestCOG,
+        acquisition_config: InseeSupplierConfig,
+        exceptions_handler_config: DepartementsInseeExceptionsToIgnoreOrCorrect,
+    ):
         super().__init__(
             output_paths=output_paths,
-            request=Path(__file__).parent / "requests" /  "departements.rq",
+            request=Path(__file__).parent / "requests" / "departements.rq",
             description='"Departements" data',
             view_name="insee_departements",
             exceptions_handler_config=exceptions_handler_config,
             acquisition_config=acquisition_config,
-            sql_templates= TemplatesSQLRequestCOG(
+            sql_templates=TemplatesSQLRequestCOG(
                 copy=Path(__file__).parent / "sql" / "departements_copy.mustache.sql",
-                create_view=Path(__file__).parent / "sql" / "departements_import.mustache.sql",
-                update=Path(__file__).parent / "sql" / "departements_correct.mustache.sql"
+                create_view=Path(__file__).parent
+                / "sql"
+                / "departements_import.mustache.sql",
+                update=Path(__file__).parent
+                / "sql"
+                / "departements_correct.mustache.sql",
             ),
             colnames=[
-                StringColumnDataType(name='uri'),
-                StringColumnDataType(name='insee_code'),
-                StringColumnDataType(name='label'),
-                StringColumnDataType(name='article_code'),
-                BooleanColumnDataType(name='is_france_metropolitaine'),
-                StringColumnDataType(name='start_event_uri'),
-                StringColumnDataType(name='end_event_uri'),
-                DateColumnDataType(name='start_date', format='%Y-%m-%d'),
-                DateColumnDataType(name='end_date', format='%Y-%m-%d'),
-                IntegerColumnDataType(name='start_date_count'),
-                IntegerColumnDataType(name='end_date_count')
+                StringColumnDataType(name="uri"),
+                StringColumnDataType(name="insee_code"),
+                StringColumnDataType(name="label"),
+                StringColumnDataType(name="article_code"),
+                BooleanColumnDataType(name="is_france_metropolitaine"),
+                StringColumnDataType(name="start_event_uri"),
+                StringColumnDataType(name="end_event_uri"),
+                DateColumnDataType(name="start_date", format="%Y-%m-%d"),
+                DateColumnDataType(name="end_date", format="%Y-%m-%d"),
+                IntegerColumnDataType(name="start_date_count"),
+                IntegerColumnDataType(name="end_date_count"),
             ],
-            extra_controls = [
-                CheckPatternAfterDownloadInseeCog(colname="uri", pattern=r"^http://id.insee.fr/geo/departement/[0-9a-z]{8}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{12}$"),
+            extra_controls=[
+                CheckPatternAfterDownloadInseeCog(
+                    colname="uri",
+                    pattern=r"^http://id.insee.fr/geo/departement/[0-9a-z]{8}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{12}$",
+                ),
                 CheckURIUnicityAfterDownloadInseeCog(),
-                CheckPatternAfterDownloadInseeCog(colname="insee_code", pattern=r"^(0[1-9]|[1-8][0-9]|9[0-5]|2[AB]|97[1-9])$"),
-                CheckPatternAfterDownloadInseeCog(colname="article_code", pattern=r"^[0-8X]$"),
-                CheckNotNullAfterDownloadInseeCog(colname='is_france_metropolitaine'),
-                CheckPatternAfterDownloadInseeCog(colname="start_event_uri", pattern=r"^http://id.insee.fr/geo/evenementGeographique/[0-9a-z]{8}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{12}$"),
-                CheckPatternAfterDownloadInseeCog(colname="end_event_uri", pattern=r"^(http://id.insee.fr/geo/evenementGeographique/[0-9a-z]{8}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{12})?$"),
+                CheckPatternAfterDownloadInseeCog(
+                    colname="insee_code",
+                    pattern=r"^(0[1-9]|[1-8][0-9]|9[0-5]|2[AB]|97[1-9])$",
+                ),
+                CheckPatternAfterDownloadInseeCog(
+                    colname="article_code", pattern=r"^[0-8X]$"
+                ),
+                CheckNotNullAfterDownloadInseeCog(colname="is_france_metropolitaine"),
+                CheckPatternAfterDownloadInseeCog(
+                    colname="start_event_uri",
+                    pattern=r"^http://id.insee.fr/geo/evenementGeographique/[0-9a-z]{8}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{12}$",
+                ),
+                CheckPatternAfterDownloadInseeCog(
+                    colname="end_event_uri",
+                    pattern=r"^(http://id.insee.fr/geo/evenementGeographique/[0-9a-z]{8}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{12})?$",
+                ),
                 CheckEventsUnequalAfterDownloadInseeCog(),
                 CheckStartDateAfterDownloadInseeCog(),
                 CheckEndDateAfterDownloadInseeCog(),
                 CheckEndEventConsistencyAfterDownloadInseeCog(),
                 CheckDateConsistencyAfterDownloadInseeCog(),
-                CheckInseeCodeOverlapAfterDownloadInseeCog()
-            ]
+                CheckInseeCodeOverlapAfterDownloadInseeCog(),
+            ],
         )
-
 
 
 class RequestsCOGDistrict(RequestCOG):
     """Class to query all districts from the COG"""
+
     def __init__(
-            self,
-            output_paths: OutputPathsRequestCOG,
-            acquisition_config: InseeSupplierConfig = InseeSupplierConfig(),
-            exceptions_handler_config: DistrictsInseeExceptionsToIgnoreOrCorrect = DistrictsInseeExceptionsToIgnoreOrCorrect()
-        ):
+        self,
+        output_paths: OutputPathsRequestCOG,
+        acquisition_config: InseeSupplierConfig,
+        exceptions_handler_config: DistrictsInseeExceptionsToIgnoreOrCorrect,
+    ):
         super().__init__(
             output_paths=output_paths,
-            request=Path(__file__).parent / "requests" /  "districts.rq",
+            request=Path(__file__).parent / "requests" / "districts.rq",
             description='"Districts" data',
             view_name="insee_districts",
             exceptions_handler_config=exceptions_handler_config,
             acquisition_config=acquisition_config,
-            sql_templates= TemplatesSQLRequestCOG(
+            sql_templates=TemplatesSQLRequestCOG(
                 copy=Path(__file__).parent / "sql" / "districts_copy.mustache.sql",
-                create_view=Path(__file__).parent / "sql" / "districts_import.mustache.sql",
-                update=Path(__file__).parent / "sql" / "districts_correct.mustache.sql"
+                create_view=Path(__file__).parent
+                / "sql"
+                / "districts_import.mustache.sql",
+                update=Path(__file__).parent / "sql" / "districts_correct.mustache.sql",
             ),
             colnames=[
-                StringColumnDataType(name='uri'),
-                StringColumnDataType(name='insee_code'),
-                StringColumnDataType(name='label'),
-                StringColumnDataType(name='article_code'),
-                StringColumnDataType(name='start_event_uri'),
-                StringColumnDataType(name='end_event_uri'),
-                DateColumnDataType(name='start_date', format='%Y-%m-%d'),
-                DateColumnDataType(name='end_date', format='%Y-%m-%d'),
-                IntegerColumnDataType(name='start_date_count'),
-                IntegerColumnDataType(name='end_date_count')
+                StringColumnDataType(name="uri"),
+                StringColumnDataType(name="insee_code"),
+                StringColumnDataType(name="label"),
+                StringColumnDataType(name="article_code"),
+                StringColumnDataType(name="start_event_uri"),
+                StringColumnDataType(name="end_event_uri"),
+                DateColumnDataType(name="start_date", format="%Y-%m-%d"),
+                DateColumnDataType(name="end_date", format="%Y-%m-%d"),
+                IntegerColumnDataType(name="start_date_count"),
+                IntegerColumnDataType(name="end_date_count"),
             ],
-            extra_controls = [
-                CheckPatternAfterDownloadInseeCog(colname="uri", pattern=r"^http://id.insee.fr/geo/district/[0-9a-z]{8}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{12}$"),
+            extra_controls=[
+                CheckPatternAfterDownloadInseeCog(
+                    colname="uri",
+                    pattern=r"^http://id.insee.fr/geo/district/[0-9a-z]{8}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{12}$",
+                ),
                 CheckURIUnicityAfterDownloadInseeCog(),
-                CheckPatternAfterDownloadInseeCog(colname="insee_code", pattern=r"^98[0-9]{3}$"),
-                CheckPatternAfterDownloadInseeCog(colname="article_code", pattern=r"^[0-8X]$"),
-                CheckPatternAfterDownloadInseeCog(colname="start_event_uri", pattern=r"^http://id.insee.fr/geo/evenementGeographique/[0-9a-z]{8}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{12}$"),
-                CheckPatternAfterDownloadInseeCog(colname="end_event_uri", pattern=r"^(http://id.insee.fr/geo/evenementGeographique/[0-9a-z]{8}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{12})?$"),
+                CheckPatternAfterDownloadInseeCog(
+                    colname="insee_code", pattern=r"^98[0-9]{3}$"
+                ),
+                CheckPatternAfterDownloadInseeCog(
+                    colname="article_code", pattern=r"^[0-8X]$"
+                ),
+                CheckPatternAfterDownloadInseeCog(
+                    colname="start_event_uri",
+                    pattern=r"^http://id.insee.fr/geo/evenementGeographique/[0-9a-z]{8}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{12}$",
+                ),
+                CheckPatternAfterDownloadInseeCog(
+                    colname="end_event_uri",
+                    pattern=r"^(http://id.insee.fr/geo/evenementGeographique/[0-9a-z]{8}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{12})?$",
+                ),
                 CheckEventsUnequalAfterDownloadInseeCog(),
                 CheckStartDateAfterDownloadInseeCog(),
                 CheckEndDateAfterDownloadInseeCog(),
                 CheckEndEventConsistencyAfterDownloadInseeCog(),
                 CheckDateConsistencyAfterDownloadInseeCog(),
-                CheckInseeCodeOverlapAfterDownloadInseeCog()
-            ]
+                CheckInseeCodeOverlapAfterDownloadInseeCog(),
+            ],
         )
 
-        
 
 class RequestsCOGCollectivitesOutremer(RequestCOG):
     """Class to query all Overseas collectivity from the COG"""
+
     def __init__(
-            self,
-            output_paths: OutputPathsRequestCOG,
-            acquisition_config: InseeSupplierConfig = InseeSupplierConfig(),
-            exceptions_handler_config: CollectivitesDOutreMerInseeExceptionsToIgnoreOrCorrect = CollectivitesDOutreMerInseeExceptionsToIgnoreOrCorrect()
-        ):
+        self,
+        output_paths: OutputPathsRequestCOG,
+        acquisition_config: InseeSupplierConfig,
+        exceptions_handler_config: (
+            CollectivitesDOutreMerInseeExceptionsToIgnoreOrCorrect
+        ),
+    ):
         super().__init__(
             output_paths=output_paths,
-            request=Path(__file__).parent / "requests" /  "collectivites_outremer.rq",
-            description='"Collectivités d\'Outre-mer" (i.e. Overseas collectivity) data',
+            request=Path(__file__).parent / "requests" / "collectivites_outremer.rq",
+            description='"Collectivités d\'Outre-mer" '
+            "(i.e. Overseas collectivity) data",
             view_name="insee_collectivites_outremer",
             exceptions_handler_config=exceptions_handler_config,
             acquisition_config=acquisition_config,
-            sql_templates= TemplatesSQLRequestCOG(
-                copy=Path(__file__).parent / "sql" / "collectivites_outremer_copy.mustache.sql",
-                create_view=Path(__file__).parent / "sql" / "collectivites_outremer_import.mustache.sql",
-                update=Path(__file__).parent / "sql" / "collectivites_outremer_correct.mustache.sql"
+            sql_templates=TemplatesSQLRequestCOG(
+                copy=Path(__file__).parent
+                / "sql"
+                / "collectivites_outremer_copy.mustache.sql",
+                create_view=Path(__file__).parent
+                / "sql"
+                / "collectivites_outremer_import.mustache.sql",
+                update=Path(__file__).parent
+                / "sql"
+                / "collectivites_outremer_correct.mustache.sql",
             ),
             colnames=[
-                StringColumnDataType(name='uri'),
-                StringColumnDataType(name='insee_code'),
-                StringColumnDataType(name='label'),
-                StringColumnDataType(name='article_code'),
-                StringColumnDataType(name='start_event_uri'),
-                StringColumnDataType(name='end_event_uri'),
-                DateColumnDataType(name='start_date', format='%Y-%m-%d'),
-                DateColumnDataType(name='end_date', format='%Y-%m-%d'),
-                IntegerColumnDataType(name='start_date_count'),
-                IntegerColumnDataType(name='end_date_count')
+                StringColumnDataType(name="uri"),
+                StringColumnDataType(name="insee_code"),
+                StringColumnDataType(name="label"),
+                StringColumnDataType(name="article_code"),
+                StringColumnDataType(name="start_event_uri"),
+                StringColumnDataType(name="end_event_uri"),
+                DateColumnDataType(name="start_date", format="%Y-%m-%d"),
+                DateColumnDataType(name="end_date", format="%Y-%m-%d"),
+                IntegerColumnDataType(name="start_date_count"),
+                IntegerColumnDataType(name="end_date_count"),
             ],
-            extra_controls = [
-                CheckPatternAfterDownloadInseeCog(colname="uri", pattern=r"^http://id.insee.fr/geo/collectiviteDOutreMer/[0-9a-z]{8}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{12}$"),
+            extra_controls=[
+                CheckPatternAfterDownloadInseeCog(
+                    colname="uri",
+                    pattern=r"^http://id.insee.fr/geo/collectiviteDOutreMer/[0-9a-z]{8}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{12}$",
+                ),
                 CheckURIUnicityAfterDownloadInseeCog(),
-                CheckPatternAfterDownloadInseeCog(colname="insee_code", pattern=r"^(95|96|975|976|977|978|981|984|985|986|987|988|989|98[0-9]{3})$"),
-                CheckPatternAfterDownloadInseeCog(colname="article_code", pattern=r"^[0-8X]$"),
-                CheckPatternAfterDownloadInseeCog(colname="start_event_uri", pattern=r"^http://id.insee.fr/geo/evenementGeographique/[0-9a-z]{8}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{12}$"),
-                CheckPatternAfterDownloadInseeCog(colname="end_event_uri", pattern=r"^(http://id.insee.fr/geo/evenementGeographique/[0-9a-z]{8}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{12})?$"),
+                CheckPatternAfterDownloadInseeCog(
+                    colname="insee_code",
+                    pattern=r"^(95|96|975|976|977|978|981|984|985|986|987|988|989|98[0-9]{3})$",
+                ),
+                CheckPatternAfterDownloadInseeCog(
+                    colname="article_code", pattern=r"^[0-8X]$"
+                ),
+                CheckPatternAfterDownloadInseeCog(
+                    colname="start_event_uri",
+                    pattern=r"^http://id.insee.fr/geo/evenementGeographique/[0-9a-z]{8}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{12}$",
+                ),
+                CheckPatternAfterDownloadInseeCog(
+                    colname="end_event_uri",
+                    pattern=r"^(http://id.insee.fr/geo/evenementGeographique/[0-9a-z]{8}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{12})?$",
+                ),
                 CheckEventsUnequalAfterDownloadInseeCog(),
                 CheckStartDateAfterDownloadInseeCog(),
                 CheckEndDateAfterDownloadInseeCog(),
                 CheckEndEventConsistencyAfterDownloadInseeCog(),
                 CheckDateConsistencyAfterDownloadInseeCog(),
-                CheckInseeCodeOverlapAfterDownloadInseeCog()                
-            ]
+                CheckInseeCodeOverlapAfterDownloadInseeCog(),
+            ],
         )
+
 
 class RequestsCOGPays(RequestCOG):
     """Class to query all countries from the COG"""
+
     def __init__(
-            self,
-            output_paths: OutputPathsRequestCOG,
-            acquisition_config: InseeSupplierConfig = InseeSupplierConfig(),
-            exceptions_handler_config: PaysInseeExceptionsToIgnoreOrCorrect = PaysInseeExceptionsToIgnoreOrCorrect()
-        ):
+        self,
+        output_paths: OutputPathsRequestCOG,
+        acquisition_config: InseeSupplierConfig,
+        exceptions_handler_config: PaysInseeExceptionsToIgnoreOrCorrect,
+    ):
         super().__init__(
             output_paths=output_paths,
             request=Path(__file__).parent / "requests" / "pays.rq",
@@ -509,98 +689,142 @@ class RequestsCOGPays(RequestCOG):
             view_name="insee_pays",
             exceptions_handler_config=exceptions_handler_config,
             acquisition_config=acquisition_config,
-            sql_templates= TemplatesSQLRequestCOG(
+            sql_templates=TemplatesSQLRequestCOG(
                 copy=Path(__file__).parent / "sql" / "pays_copy.mustache.sql",
                 create_view=Path(__file__).parent / "sql" / "pays_import.mustache.sql",
-                update=Path(__file__).parent / "sql" / "pays_correct.mustache.sql"
+                update=Path(__file__).parent / "sql" / "pays_correct.mustache.sql",
             ),
             colnames=[
-                StringColumnDataType(name='uri'),
-                StringColumnDataType(name='insee_code'),
-                StringColumnDataType(name='label'),
-                StringColumnDataType(name='article_code'),
-                StringColumnDataType(name='long_label'),
-                StringColumnDataType(name='iso3166alpha2_code'),
-                StringColumnDataType(name='iso3166alpha3_code'),
-                StringColumnDataType(name='iso3166num_code'),
-                StringColumnDataType(name='start_event_uri'),
-                StringColumnDataType(name='end_event_uri'),
-                DateColumnDataType(name='start_date', format='%Y-%m-%d'),
-                DateColumnDataType(name='end_date', format='%Y-%m-%d'),
-                IntegerColumnDataType(name='start_date_count'),
-                IntegerColumnDataType(name='end_date_count')
+                StringColumnDataType(name="uri"),
+                StringColumnDataType(name="insee_code"),
+                StringColumnDataType(name="label"),
+                StringColumnDataType(name="article_code"),
+                StringColumnDataType(name="long_label"),
+                StringColumnDataType(name="iso3166alpha2_code"),
+                StringColumnDataType(name="iso3166alpha3_code"),
+                StringColumnDataType(name="iso3166num_code"),
+                StringColumnDataType(name="start_event_uri"),
+                StringColumnDataType(name="end_event_uri"),
+                DateColumnDataType(name="start_date", format="%Y-%m-%d"),
+                DateColumnDataType(name="end_date", format="%Y-%m-%d"),
+                IntegerColumnDataType(name="start_date_count"),
+                IntegerColumnDataType(name="end_date_count"),
             ],
-            extra_controls = [
-                CheckPatternAfterDownloadInseeCog(colname="uri", pattern=r"^http://id.insee.fr/geo/pays/[0-9a-z]{8}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{12}$"),
+            extra_controls=[
+                CheckPatternAfterDownloadInseeCog(
+                    colname="uri",
+                    pattern=r"^http://id.insee.fr/geo/pays/[0-9a-z]{8}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{12}$",
+                ),
                 CheckURIUnicityAfterDownloadInseeCog(),
-                CheckPatternAfterDownloadInseeCog(colname="insee_code", pattern=r"^99[0-9]{3}$"),
-                CheckPatternAfterDownloadInseeCog(colname="article_code", pattern=r"^[0-8X]$"),
-                CheckPatternAfterDownloadInseeCog(colname="iso3166alpha2_code", pattern=r"^([A-Z]{2})?$"),
-                CheckPatternAfterDownloadInseeCog(colname="iso3166alpha3_code", pattern=r"^([A-Z]{3})?$"),
-                CheckPatternAfterDownloadInseeCog(colname="iso3166num_code", pattern=r"^([0-9]{3})?$"),
-                CheckPatternAfterDownloadInseeCog(colname="start_event_uri", pattern=r"^http://id.insee.fr/geo/evenementGeographique/[0-9a-z]{8}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{12}$"),
-                CheckPatternAfterDownloadInseeCog(colname="end_event_uri", pattern=r"^(http://id.insee.fr/geo/evenementGeographique/[0-9a-z]{8}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{12})?$"),
+                CheckPatternAfterDownloadInseeCog(
+                    colname="insee_code", pattern=r"^99[0-9]{3}$"
+                ),
+                CheckPatternAfterDownloadInseeCog(
+                    colname="article_code", pattern=r"^[0-8X]$"
+                ),
+                CheckPatternAfterDownloadInseeCog(
+                    colname="iso3166alpha2_code", pattern=r"^([A-Z]{2})?$"
+                ),
+                CheckPatternAfterDownloadInseeCog(
+                    colname="iso3166alpha3_code", pattern=r"^([A-Z]{3})?$"
+                ),
+                CheckPatternAfterDownloadInseeCog(
+                    colname="iso3166num_code", pattern=r"^([0-9]{3})?$"
+                ),
+                CheckPatternAfterDownloadInseeCog(
+                    colname="start_event_uri",
+                    pattern=r"^http://id.insee.fr/geo/evenementGeographique/[0-9a-z]{8}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{12}$",
+                ),
+                CheckPatternAfterDownloadInseeCog(
+                    colname="end_event_uri",
+                    pattern=r"^(http://id.insee.fr/geo/evenementGeographique/[0-9a-z]{8}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{12})?$",
+                ),
                 CheckEventsUnequalAfterDownloadInseeCog(),
                 CheckStartDateAfterDownloadInseeCog(),
                 CheckEndDateAfterDownloadInseeCog(),
                 CheckEndEventConsistencyAfterDownloadInseeCog(),
                 CheckDateConsistencyAfterDownloadInseeCog(),
-                CheckInseeCodeOverlapAfterDownloadInseeCog()
-            ]
+                CheckInseeCodeOverlapAfterDownloadInseeCog(),
+            ],
         )
 
 
 class RequestsCOGTerritoires(RequestCOG):
     """Class to query all territories from the COG"""
+
     def __init__(
-            self,
-            output_paths: OutputPathsRequestCOG,
-            acquisition_config: InseeSupplierConfig = InseeSupplierConfig(),
-            exceptions_handler_config: TerritoiresInseeExceptionsToIgnoreOrCorrect = TerritoiresInseeExceptionsToIgnoreOrCorrect()
-        ):
+        self,
+        output_paths: OutputPathsRequestCOG,
+        acquisition_config: InseeSupplierConfig,
+        exceptions_handler_config: TerritoiresInseeExceptionsToIgnoreOrCorrect,
+    ):
         super().__init__(
             output_paths=output_paths,
             request=Path(__file__).parent / "requests" / "territoires.rq",
-            description='"Territoires" (i.e. geopolitical sub-division of a country) data',
+            description='"Territoires" '
+            "(i.e. geopolitical sub-division of a country) data",
             view_name="insee_territoires",
             exceptions_handler_config=exceptions_handler_config,
             acquisition_config=acquisition_config,
-            sql_templates= TemplatesSQLRequestCOG(
+            sql_templates=TemplatesSQLRequestCOG(
                 copy=Path(__file__).parent / "sql" / "territoires_copy.mustache.sql",
-                create_view=Path(__file__).parent / "sql" / "territoires_import.mustache.sql",
-                update=Path(__file__).parent / "sql" / "territoires_correct.mustache.sql"
+                create_view=Path(__file__).parent
+                / "sql"
+                / "territoires_import.mustache.sql",
+                update=Path(__file__).parent
+                / "sql"
+                / "territoires_correct.mustache.sql",
             ),
             colnames=[
-                StringColumnDataType(name='uri'),
-                StringColumnDataType(name='insee_code'),
-                StringColumnDataType(name='label'),
-                StringColumnDataType(name='article_code'),
-                StringColumnDataType(name='long_label'),
-                StringColumnDataType(name='iso3166alpha2_code'),
-                StringColumnDataType(name='iso3166alpha3_code'),
-                StringColumnDataType(name='iso3166num_code'),
-                StringColumnDataType(name='start_event_uri'),
-                StringColumnDataType(name='end_event_uri'),
-                DateColumnDataType(name='start_date', format='%Y-%m-%d'),
-                DateColumnDataType(name='end_date', format='%Y-%m-%d'),
-                IntegerColumnDataType(name='start_date_count'),
-                IntegerColumnDataType(name='end_date_count')
+                StringColumnDataType(name="uri"),
+                StringColumnDataType(name="insee_code"),
+                StringColumnDataType(name="label"),
+                StringColumnDataType(name="article_code"),
+                StringColumnDataType(name="long_label"),
+                StringColumnDataType(name="iso3166alpha2_code"),
+                StringColumnDataType(name="iso3166alpha3_code"),
+                StringColumnDataType(name="iso3166num_code"),
+                StringColumnDataType(name="start_event_uri"),
+                StringColumnDataType(name="end_event_uri"),
+                DateColumnDataType(name="start_date", format="%Y-%m-%d"),
+                DateColumnDataType(name="end_date", format="%Y-%m-%d"),
+                IntegerColumnDataType(name="start_date_count"),
+                IntegerColumnDataType(name="end_date_count"),
             ],
-            extra_controls = [
-                CheckPatternAfterDownloadInseeCog(colname="uri", pattern=r"^http://id.insee.fr/geo/territoire/[0-9a-z]{8}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{12}$"),
+            extra_controls=[
+                CheckPatternAfterDownloadInseeCog(
+                    colname="uri",
+                    pattern=r"^http://id.insee.fr/geo/territoire/[0-9a-z]{8}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{12}$",
+                ),
                 CheckURIUnicityAfterDownloadInseeCog(),
-                CheckPatternAfterDownloadInseeCog(colname="insee_code", pattern=r"^99[0-9]{3}$"),
-                CheckPatternAfterDownloadInseeCog(colname="article_code", pattern=r"^[0-8X]$"),
-                CheckPatternAfterDownloadInseeCog(colname="iso3166alpha2_code", pattern=r"^([A-Z]{2})?$"),
-                CheckPatternAfterDownloadInseeCog(colname="iso3166alpha3_code", pattern=r"^([A-Z]{3})?$"),
-                CheckPatternAfterDownloadInseeCog(colname="iso3166num_code", pattern=r"^([0-9]{3})?$"),
-                CheckPatternAfterDownloadInseeCog(colname="start_event_uri", pattern=r"^http://id.insee.fr/geo/evenementGeographique/[0-9a-z]{8}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{12}$"),
-                CheckPatternAfterDownloadInseeCog(colname="end_event_uri", pattern=r"^(http://id.insee.fr/geo/evenementGeographique/[0-9a-z]{8}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{12})?$"),
+                CheckPatternAfterDownloadInseeCog(
+                    colname="insee_code", pattern=r"^99[0-9]{3}$"
+                ),
+                CheckPatternAfterDownloadInseeCog(
+                    colname="article_code", pattern=r"^[0-8X]$"
+                ),
+                CheckPatternAfterDownloadInseeCog(
+                    colname="iso3166alpha2_code", pattern=r"^([A-Z]{2})?$"
+                ),
+                CheckPatternAfterDownloadInseeCog(
+                    colname="iso3166alpha3_code", pattern=r"^([A-Z]{3})?$"
+                ),
+                CheckPatternAfterDownloadInseeCog(
+                    colname="iso3166num_code", pattern=r"^([0-9]{3})?$"
+                ),
+                CheckPatternAfterDownloadInseeCog(
+                    colname="start_event_uri",
+                    pattern=r"^http://id.insee.fr/geo/evenementGeographique/[0-9a-z]{8}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{12}$",
+                ),
+                CheckPatternAfterDownloadInseeCog(
+                    colname="end_event_uri",
+                    pattern=r"^(http://id.insee.fr/geo/evenementGeographique/[0-9a-z]{8}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{12})?$",
+                ),
                 CheckEventsUnequalAfterDownloadInseeCog(),
                 CheckStartDateAfterDownloadInseeCog(),
                 CheckEndDateAfterDownloadInseeCog(),
                 CheckEndEventConsistencyAfterDownloadInseeCog(),
                 CheckDateConsistencyAfterDownloadInseeCog(),
-                CheckInseeCodeOverlapAfterDownloadInseeCog()
-            ]
+                CheckInseeCodeOverlapAfterDownloadInseeCog(),
+            ],
         )

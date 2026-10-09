@@ -1,97 +1,183 @@
-from typing import Union, List
-from pydantic import BaseModel, RootModel, model_validator
 from collections import Counter
 
-from .checks.apply_update import InseeCommuneAddOrReplace, InseeArrondissementMunicipalAddOrReplace, InseeDepartementAddOrReplace, InseeCollectiviteOutremerAddOrReplace, InseeDistrictAddOrReplace, InseePaysAddOrReplace, InseeGeoRemove
+from pydantic import BaseModel, RootModel, model_validator
 
-def check_unique_uri(uris: List[str]):
+from .checks.apply_update import (
+    InseeArrondissementMunicipalAddOrReplace,
+    InseeCollectiviteOutremerAddOrReplace,
+    InseeCommuneAddOrReplace,
+    InseeDepartementAddOrReplace,
+    InseeDistrictAddOrReplace,
+    InseeGeoRemove,
+    InseePaysAddOrReplace,
+)
+
+
+def check_unique_uri(uris: list[str]):
     counter = Counter(uris)
     duplicates = [id_ for id_, count in counter.items() if count > 1]
     if duplicates:
         example = duplicates[0]
         raise ValueError(
-            f"URIs must be unique, but the following URIs are duplicated: {duplicates}. For example, the URI '{example}' appears {counter[example]} times."
+            f"""
+            URIs must be unique, but the following URIs are duplicated :
+            {duplicates}. For example, the URI '{example}'
+            appears {counter[example]} times.
+            """
         )
+
 
 class InseeExceptionsToIgnoreOrCorrectModel(RootModel):
     pass
 
 
 class CommunesInseeExceptionsToIgnoreOrCorrect(InseeExceptionsToIgnoreOrCorrectModel):
-    root: list[Union[InseeCommuneAddOrReplace, InseeGeoRemove]] = []
+    root: list[InseeCommuneAddOrReplace | InseeGeoRemove] = []
 
     @model_validator(mode="after")
     def unique_uri(self):
-        check_unique_uri([item.uri for item in self.root if isinstance(item, InseeCommuneAddOrReplace)])
-        check_unique_uri([item.uri for item in self.root if isinstance(item, InseeGeoRemove)])
+        check_unique_uri(
+            [
+                item.uri
+                for item in self.root
+                if isinstance(item, InseeCommuneAddOrReplace)
+            ]
+        )
+        check_unique_uri(
+            [item.uri for item in self.root if isinstance(item, InseeGeoRemove)]
+        )
         return self
 
 
-class ArrondissementsMunicipauxInseeExceptionsToIgnoreOrCorrect(InseeExceptionsToIgnoreOrCorrectModel):
-    root: list[Union[InseeArrondissementMunicipalAddOrReplace, InseeGeoRemove]] = []
+class ArrondissementsMunicipauxInseeExceptionsToIgnoreOrCorrect(
+    InseeExceptionsToIgnoreOrCorrectModel
+):
+    root: list[InseeArrondissementMunicipalAddOrReplace | InseeGeoRemove] = []
 
     @model_validator(mode="after")
     def unique_uri(self):
-        check_unique_uri([item.uri for item in self.root if isinstance(item, InseeArrondissementMunicipalAddOrReplace)])
-        check_unique_uri([item.uri for item in self.root if isinstance(item, InseeGeoRemove)])
+        check_unique_uri(
+            [
+                item.uri
+                for item in self.root
+                if isinstance(item, InseeArrondissementMunicipalAddOrReplace)
+            ]
+        )
+        check_unique_uri(
+            [item.uri for item in self.root if isinstance(item, InseeGeoRemove)]
+        )
         return self
-    
-class DepartementsInseeExceptionsToIgnoreOrCorrect(InseeExceptionsToIgnoreOrCorrectModel):
-    root: list[Union[InseeDepartementAddOrReplace, InseeGeoRemove]] = []
+
+
+class DepartementsInseeExceptionsToIgnoreOrCorrect(
+    InseeExceptionsToIgnoreOrCorrectModel
+):
+    root: list[InseeDepartementAddOrReplace | InseeGeoRemove] = []
 
     @model_validator(mode="after")
     def unique_uri(self):
-        check_unique_uri([item.uri for item in self.root if isinstance(item, InseeDepartementAddOrReplace)])
-        check_unique_uri([item.uri for item in self.root if isinstance(item, InseeGeoRemove)])
+        check_unique_uri(
+            [
+                item.uri
+                for item in self.root
+                if isinstance(item, InseeDepartementAddOrReplace)
+            ]
+        )
+        check_unique_uri(
+            [item.uri for item in self.root if isinstance(item, InseeGeoRemove)]
+        )
         return self
 
-class CollectivitesDOutreMerInseeExceptionsToIgnoreOrCorrect(InseeExceptionsToIgnoreOrCorrectModel):
-    root: list[Union[InseeCollectiviteOutremerAddOrReplace, InseeGeoRemove]] = []
+
+class CollectivitesDOutreMerInseeExceptionsToIgnoreOrCorrect(
+    InseeExceptionsToIgnoreOrCorrectModel
+):
+    root: list[InseeCollectiviteOutremerAddOrReplace | InseeGeoRemove] = []
 
     @model_validator(mode="after")
     def unique_uri(self):
-        check_unique_uri([item.uri for item in self.root if isinstance(item, InseeCollectiviteOutremerAddOrReplace)])
-        check_unique_uri([item.uri for item in self.root if isinstance(item, InseeGeoRemove)])
+        check_unique_uri(
+            [
+                item.uri
+                for item in self.root
+                if isinstance(item, InseeCollectiviteOutremerAddOrReplace)
+            ]
+        )
+        check_unique_uri(
+            [item.uri for item in self.root if isinstance(item, InseeGeoRemove)]
+        )
         return self
 
 
 class DistrictsInseeExceptionsToIgnoreOrCorrect(InseeExceptionsToIgnoreOrCorrectModel):
-    root: list[Union[InseeDistrictAddOrReplace, InseeGeoRemove]] = []
+    root: list[InseeDistrictAddOrReplace | InseeGeoRemove] = []
 
     @model_validator(mode="after")
     def unique_uri(self):
-        check_unique_uri([item.uri for item in self.root if isinstance(item, InseeDistrictAddOrReplace)])
-        check_unique_uri([item.uri for item in self.root if isinstance(item, InseeGeoRemove)])
+        check_unique_uri(
+            [
+                item.uri
+                for item in self.root
+                if isinstance(item, InseeDistrictAddOrReplace)
+            ]
+        )
+        check_unique_uri(
+            [item.uri for item in self.root if isinstance(item, InseeGeoRemove)]
+        )
         return self
 
 
 class PaysInseeExceptionsToIgnoreOrCorrect(InseeExceptionsToIgnoreOrCorrectModel):
-    root: list[Union[InseePaysAddOrReplace, InseeGeoRemove]] = []
+    root: list[InseePaysAddOrReplace | InseeGeoRemove] = []
 
     @model_validator(mode="after")
     def unique_uri(self):
-        check_unique_uri([item.uri for item in self.root if isinstance(item, InseePaysAddOrReplace)])
-        check_unique_uri([item.uri for item in self.root if isinstance(item, InseeGeoRemove)])
+        check_unique_uri(
+            [item.uri for item in self.root if isinstance(item, InseePaysAddOrReplace)]
+        )
+        check_unique_uri(
+            [item.uri for item in self.root if isinstance(item, InseeGeoRemove)]
+        )
         return self
-    
-class TerritoiresInseeExceptionsToIgnoreOrCorrect(InseeExceptionsToIgnoreOrCorrectModel):
-    root: list[Union[InseePaysAddOrReplace, InseeGeoRemove]] = []
+
+
+class TerritoiresInseeExceptionsToIgnoreOrCorrect(
+    InseeExceptionsToIgnoreOrCorrectModel
+):
+    root: list[InseePaysAddOrReplace | InseeGeoRemove] = []
 
     @model_validator(mode="after")
     def unique_uri(self):
-        check_unique_uri([item.uri for item in self.root if isinstance(item, InseePaysAddOrReplace)])
-        check_unique_uri([item.uri for item in self.root if isinstance(item, InseeGeoRemove)])
+        check_unique_uri(
+            [item.uri for item in self.root if isinstance(item, InseePaysAddOrReplace)]
+        )
+        check_unique_uri(
+            [item.uri for item in self.root if isinstance(item, InseeGeoRemove)]
+        )
         return self
 
 
 class InseeExceptionsToIgnoreOrCorrect(BaseModel):
-    communes: CommunesInseeExceptionsToIgnoreOrCorrect = CommunesInseeExceptionsToIgnoreOrCorrect()
-    arrondissements_municipaux: ArrondissementsMunicipauxInseeExceptionsToIgnoreOrCorrect = ArrondissementsMunicipauxInseeExceptionsToIgnoreOrCorrect()
-    departements: DepartementsInseeExceptionsToIgnoreOrCorrect = DepartementsInseeExceptionsToIgnoreOrCorrect()
-    collectivites_outremer: CollectivitesDOutreMerInseeExceptionsToIgnoreOrCorrect = CollectivitesDOutreMerInseeExceptionsToIgnoreOrCorrect()
-    districts: DistrictsInseeExceptionsToIgnoreOrCorrect = DistrictsInseeExceptionsToIgnoreOrCorrect()
+    communes: CommunesInseeExceptionsToIgnoreOrCorrect = (
+        CommunesInseeExceptionsToIgnoreOrCorrect()
+    )
+    arrondissements_municipaux: ArrondissementsMunicipauxInseeExceptionsToIgnoreOrCorrect = (
+        ArrondissementsMunicipauxInseeExceptionsToIgnoreOrCorrect()
+    )
+    departements: DepartementsInseeExceptionsToIgnoreOrCorrect = (
+        DepartementsInseeExceptionsToIgnoreOrCorrect()
+    )
+    collectivites_outremer: CollectivitesDOutreMerInseeExceptionsToIgnoreOrCorrect = (
+        CollectivitesDOutreMerInseeExceptionsToIgnoreOrCorrect()
+    )
+    districts: DistrictsInseeExceptionsToIgnoreOrCorrect = (
+        DistrictsInseeExceptionsToIgnoreOrCorrect()
+    )
     pays: PaysInseeExceptionsToIgnoreOrCorrect = PaysInseeExceptionsToIgnoreOrCorrect()
-    territoires: TerritoiresInseeExceptionsToIgnoreOrCorrect = TerritoiresInseeExceptionsToIgnoreOrCorrect()
+    territoires: TerritoiresInseeExceptionsToIgnoreOrCorrect = (
+        TerritoiresInseeExceptionsToIgnoreOrCorrect()
+    )
+
 
 class InseeSupplierConfig(BaseModel):
     endpoint_url: str = "http://rdf.insee.fr/sparql"
