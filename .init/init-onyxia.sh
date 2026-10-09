@@ -22,6 +22,7 @@ fi
 jq '. + {
     "workbench.colorTheme": "Default Dark Modern",  # Set the theme
     "editor.rulers": [120],  # Add specific vertical rulers
+ "python.terminal.activateEnvironment": true,
     "files.trimTrailingWhitespace": true, # Automatically trim trailing whitespace
     "files.insertFinalNewline": true, # Ensure files end with a newline
     "flake8.args": [
@@ -31,8 +32,6 @@ jq '. + {
         "editor.formatOnSave": true
     },
     "[python]": {
-        "defaultInterpreterPath": "${workspaceFolder}/.venv/bin/python",
-        "terminal.activateEnvironment": true,
         "editor.defaultFormatter": "charliermarsh.ruff",
         "editor.formatOnSave": true,
         "editor.codeActionsOnSave": {
@@ -46,5 +45,5 @@ curl -LsSf https://mistral.ai/vibe/install.sh | bash
 
 echo 'export PATH="/home/onyxia/.local/bin:$PATH"' >> ~/.bashrc
 
-
+echo 'if [ -f "$PWD/.venv/bin/activate" ]; then source "$PWD/.venv/bin/activate"; fi' >> ~/.bashrc
 
