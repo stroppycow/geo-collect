@@ -1,14 +1,9 @@
-
-from pathlib import Path
 from abc import ABC, abstractmethod
-from typing import Optional
+from pathlib import Path
+
 
 class ColumnDataType(ABC):
-    def __init__(
-            self,
-            name: str,
-            duckdb_type: str
-        ):
+    def __init__(self, name: str, duckdb_type: str):
         self.name = name
         self.duckdb_type = duckdb_type
 
@@ -21,77 +16,79 @@ class ColumnDataType(ABC):
             return False
         return self.name == other.name and self.duckdb_type == other.duckdb_type
 
+
 class StringColumnDataType(ColumnDataType):
     def __init__(self, name: str):
-        super().__init__(
-            name=name,
-            duckdb_type="VARCHAR"
-        )
+        super().__init__(name=name, duckdb_type="VARCHAR")
 
     def get_duckdb_parsing(self) -> str:
-        return "{x}".format(x=self.name)
+        return f"{self.name}"
 
     def __eq__(self, other):
         if not isinstance(other, StringColumnDataType):
             return False
         return super().__eq__(other)
 
+
 class StringListColumnDataType(ColumnDataType):
     def __init__(self, name: str, sep: str):
-        super().__init__(
-            name=name,
-            duckdb_type="VARCHAR"
-        )
+        super().__init__(name=name, duckdb_type="VARCHAR")
         self.sep = sep
 
     def get_duckdb_parsing(self) -> str:
-        return "{x}".format(x=self.name)
+        return f"{self.name}"
 
     def __eq__(self, other):
         if not isinstance(other, StringListColumnDataType):
             return False
         return super().__eq__(other) and self.sep == other.sep
 
+
 class BooleanColumnDataType(ColumnDataType):
     def __init__(self, name: str):
-        super().__init__(
-            name=name,
-            duckdb_type="BOOLEAN"
-        )
+        super().__init__(name=name, duckdb_type="BOOLEAN")
 
     def get_duckdb_parsing(self) -> str:
-        return "CAST({x} AS BOOLEAN)".format(x=self.name)
+        return f"CAST({self.name} AS BOOLEAN)"
 
     def __eq__(self, other):
         if not isinstance(other, BooleanColumnDataType):
             return False
         return super().__eq__(other)
 
+
 class DateColumnDataType(ColumnDataType):
     def __init__(self, name: str, format: str):
-        super().__init__(
-            name=name,
-            duckdb_type="DATE"
-        )
+        super().__init__(name=name, duckdb_type="DATE")
         self.format = format
 
     def get_duckdb_parsing(self) -> str:
-        return "CASE WHEN {x} is NULL THEN NULL::DATE ELSE CAST(strptime({x}, '{format}') AS DATE) END".format(x=self.name, format=self.format)
+        return f"""
+        CASE
+            WHEN {self.name} is NULL
+            THEN NULL::DATE
+            ELSE CAST(strptime({self.name}, '{self.format}') AS DATE)
+        END
+        """
 
     def __eq__(self, other):
         if not isinstance(other, DateColumnDataType):
             return False
         return super().__eq__(other) and self.format == other.format
 
+
 class IntegerColumnDataType(ColumnDataType):
     def __init__(self, name: str):
-        super().__init__(
-            name=name,
-            duckdb_type="BIGINT"
-        )
+        super().__init__(name=name, duckdb_type="BIGINT")
 
     def get_duckdb_parsing(self) -> str:
-        return "CASE WHEN {x} is NULL THEN NULL::BIGINT ELSE CAST({x} AS BIGINT) END".format(x=self.name)
+        return f"""
+        CASE
+            WHEN {self.name} is NULL
+            THEN NULL::BIGINT
+            ELSE CAST({self.name} AS BIGINT)
+        END
+        """
 
     def __eq__(self, other):
         if not isinstance(other, IntegerColumnDataType):
@@ -103,24 +100,27 @@ class FileMetadata(ABC):
     def __init__(self, path: Path):
         self.path = path
 
+
 class GeoCSVFileMetadata(FileMetadata):
     def __init__(
-            self,
-            path: Path,
-            header: bool,
-            delim: str,
-            encoding: str,
-            colnames: list[ColumnDataType]
-        ):
+        self,
+        path: Path,
+        header: bool,
+        delim: str,
+        encoding: str,
+        colnames: list[ColumnDataType],
+    ):
         super().__init__(path=path)
         self.header = header
-        self.delim =  delim
+        self.delim = delim
         self.encoding = encoding
         self.colnames = colnames
 
-    def get_duckdb_sql_import_query(self, keep_colnames: Optional[list[str]] = None) -> str:
+    def get_duckdb_sql_import_query(
+        self, keep_colnames: list[str] | None = None
+    ) -> str:
         return """
-            SELECT 
+            SELECT
                 {columns_spec}
             FROM read_csv(
                 '{path}',
@@ -130,12 +130,19 @@ class GeoCSVFileMetadata(FileMetadata):
                 encoding='{encoding}'
             )
         """.format(
-            columns_spec=", ".join([f"{c.get_duckdb_parsing()} AS {c.name}" for c in self.colnames if keep_colnames is None or c.name in keep_colnames]),
+            columns_spec=", ".join(
+                [
+                    f"{c.get_duckdb_parsing()} AS {c.name}"
+                    for c in self.colnames
+                    if keep_colnames is None or c.name in keep_colnames
+                ]
+            ),
             path=str(self.path.resolve()),
             delim=self.delim,
-            header='true' if self.header else 'false',
-            encoding=self.encoding
+            header="true" if self.header else "false",
+            encoding=self.encoding,
         )
+
 
 class InfoCurrentStoredData:
     def __init__(self):
@@ -143,22 +150,20 @@ class InfoCurrentStoredData:
 
     def add_data(self, key: str, value: FileMetadata):
         if key in self.data:
-            raise RuntimeError("Key '{key}' already exists".format(key=key))
+            raise RuntimeError(f"Key '{key}' already exists")
         self.data[key] = value
 
     def replace_data(self, key: str, value: FileMetadata):
         if key not in self.data:
-            raise RuntimeError("Key '{key}' does not exists".format(key=key))
+            raise RuntimeError(f"Key '{key}' does not exists")
         self.data[key] = value
 
     def remove_data(self, key: str):
         if key not in self.data:
-            raise RuntimeError("Key '{key}' does not exists".format(key=key))
+            raise RuntimeError(f"Key '{key}' does not exists")
         del self.data[key]
-    
+
     def get_data(self, key: str) -> FileMetadata:
         if key not in self.data:
-            raise RuntimeError("Key '{key}' does not exists".format(key=key))
+            raise RuntimeError(f"Key '{key}' does not exists")
         return self.data[key]
-    
-    

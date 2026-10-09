@@ -8,6 +8,8 @@ from typing import TYPE_CHECKING
 
 from .abstract import DataValidationAndConsistencyInseeCog
 
+logger = logging.getLogger(__name__)
+
 if TYPE_CHECKING:
     from ..requests import RequestCOG
 
@@ -56,6 +58,6 @@ class CheckParentPeriodsContainChildPeriodAfterDownloadInseeCog(DataValidationAn
                 raise RuntimeError(f"Bug found in row number {row_number_bug}, uri: {uri_bug} for {request.description} : period of validity of child [{start_date} - {end_date}[ is not included in the period of validity of parent [{parent_start_date} - {parent_end_date}[")
         except Exception as e:
             raise RuntimeError(f"Unexpected error while checking all period of validity of children are included in their parents for {request.description}") from e
-        logging.info(f"Successfully checked all period of validity of children are included in their parents for {request.description}")
+        logger.info(f"Successfully checked all period of validity of children are included in their parents for {request.description}")
         return True
 

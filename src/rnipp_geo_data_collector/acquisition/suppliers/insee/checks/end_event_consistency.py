@@ -8,6 +8,8 @@ from typing import TYPE_CHECKING
 
 from .abstract import DataValidationAndConsistencyInseeCog
 
+logger = logging.getLogger(__name__)
+
 if TYPE_CHECKING:
     from ..requests import RequestCOG
 
@@ -50,6 +52,6 @@ class CheckEndEventConsistencyAfterDownloadInseeCog(DataValidationAndConsistency
                     raise RuntimeError(f"Failed to load {request.description} after downloading. The file may be corrupted or not in the expected format. The end event is not empty whereas end date is empty. Row number: {row_number_bug}, URI: {uri_bug}, end_event: {end_event_bug}, end_date: {end_date_bug}.")
         except Exception as e:
             raise RuntimeError(f"Unexpected error while checking end event consistency of {request.description} after downloading") from e
-        logging.info(f"Successfully checked end event consistency of {request.description} after downloading")
+        logger.info(f"Successfully checked end event consistency of {request.description} after downloading")
         return True
 

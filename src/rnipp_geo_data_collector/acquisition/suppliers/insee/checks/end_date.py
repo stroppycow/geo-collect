@@ -9,6 +9,8 @@ import datetime
 
 from .abstract import DataValidationAndConsistencyInseeCog
 
+logger = logging.getLogger(__name__)
+
 if TYPE_CHECKING:
     from ..requests import RequestCOG
 
@@ -57,6 +59,6 @@ class CheckEndDateAfterDownloadInseeCog(DataValidationAndConsistencyInseeCog):
         except Exception as e:
             raise RuntimeError(f"Unexpected error while checking end date of {request.description} after downloading") from e
         
-        logging.info(f"Successfully checked end date of {request.description} after downloading")
+        logger.info(f"Successfully checked end date of {request.description} after downloading")
         return True
 

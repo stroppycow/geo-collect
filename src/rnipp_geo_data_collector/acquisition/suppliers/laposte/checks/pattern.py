@@ -8,6 +8,8 @@ from typing import TYPE_CHECKING
 
 from .abstract import DataValidationAndConsistencyLaPosteHexasmal
 
+logger = logging.getLogger(__name__)
+
 
 if TYPE_CHECKING:
     from ..requests import RequestLaPosteHexasmal
@@ -53,5 +55,5 @@ class CheckPatternAfterDownloadLaPosteHexasmal(DataValidationAndConsistencyLaPos
         except Exception as e:
             raise RuntimeError(f"Unexpected error while checking '{self.colname} of La Poste Hexasmal data after downloading") from e
                   
-        logging.info(f"Successfully checked pattern for colname '{self.colname}' of La Poste Hexasmal data after downloading")
+        logger.info(f"Successfully checked pattern for colname '{self.colname}' of La Poste Hexasmal data after downloading")
         return True

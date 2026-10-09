@@ -8,6 +8,8 @@ from typing import TYPE_CHECKING
 
 from .abstract import DataValidationAndConsistencyInseeCog
 
+logger = logging.getLogger(__name__)
+
 if TYPE_CHECKING:
     from ..requests import RequestCOG
 
@@ -56,6 +58,6 @@ class CheckParentURIsExistAfterDownloadInseeCog(DataValidationAndConsistencyInse
         except Exception as e:
             raise RuntimeError(f"Unexpected error while checking parent URI existence for {request.description}") from e
         
-        logging.info(f"Successfully checked parent URI existence for {request.description}")
+        logger.info(f"Successfully checked parent URI existence for {request.description}")
         return True
 

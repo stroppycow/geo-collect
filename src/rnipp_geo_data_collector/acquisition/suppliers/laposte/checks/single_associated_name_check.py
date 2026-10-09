@@ -8,6 +8,8 @@ from typing import TYPE_CHECKING
 
 from .abstract import DataValidationAndConsistencyLaPosteHexasmal
 
+logger = logging.getLogger(__name__)
+
 
 if TYPE_CHECKING:
     from ..requests import RequestLaPosteHexasmal
@@ -47,5 +49,5 @@ class CheckSingleAssociatedNameAfterDownloadLaPosteHexasmal(DataValidationAndCon
         except Exception as e:
             raise RuntimeError(f"Unexpected error while checking single associated name of La Poste Hexasmal data after downloading") from e
                   
-        logging.info(f"Successfully checked whether, if an INSEE code is associated with only one row/observation, the additional label (i.e., ligne_5) is missing of La Poste Hexasmal data after downloading")
+        logger.info(f"Successfully checked whether, if an INSEE code is associated with only one row/observation, the additional label (i.e., ligne_5) is missing of La Poste Hexasmal data after downloading")
         return True

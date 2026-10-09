@@ -8,6 +8,8 @@ from typing import TYPE_CHECKING
 
 from .abstract import DataValidationAndConsistencyInseeCog
 
+logger = logging.getLogger(__name__)
+
 if TYPE_CHECKING:
     from ..requests import RequestCOG
 
@@ -55,6 +57,6 @@ class CheckParentPeriodOverlapAfterDownloadInseeCog(DataValidationAndConsistency
                 raise RuntimeError(f"Bug found in row number {row_number_bug}, uri: {uri_bug} for {request.description} : period of validity of {parent_uri_a_bug} overlaps with {parent_uri_b_bug}")
         except Exception as e:
             raise RuntimeError(f"Unexpected error while checking absence of overlap in periods of validity for {request.description}") from e
-        logging.info(f"Successfully checked absence of overlap in periods of validity for {request.description}")
+        logger.info(f"Successfully checked absence of overlap in periods of validity for {request.description}")
         return True
 

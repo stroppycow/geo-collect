@@ -8,6 +8,8 @@ from typing import TYPE_CHECKING
 
 from .abstract import DataValidationAndConsistencyInseeCog
 
+logger = logging.getLogger(__name__)
+
 if TYPE_CHECKING:
     from ..requests import RequestCOG
 
@@ -46,6 +48,6 @@ class CheckEventsUnequalAfterDownloadInseeCog(DataValidationAndConsistencyInseeC
                 raise RuntimeError(f"Failed to load {request.description} after downloading. The file may be corrupted or not in the expected format. The start event URI is the same as the end event URI. Row number: {row_number_bug}, URI: {uri_bug}, Start Event URI: {start_event_bug}, End Event URI: {end_event_bug}")
         except Exception as e:
             raise RuntimeError(f"Unexpected error while checking start event URI and end event URI are not equal for {request.description} after downloading") from e
-        logging.info(f"Successfully checked that the start event URI and the end event URI are not equal for  {request.description} after downloading")
+        logger.info(f"Successfully checked that the start event URI and the end event URI are not equal for  {request.description} after downloading")
         return True
 

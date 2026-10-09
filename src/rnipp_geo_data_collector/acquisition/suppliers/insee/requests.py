@@ -26,6 +26,8 @@ from .checks.apply_update import InseeGeoRemove, InseeGeoAddOrReplace
 from .checks.not_null import CheckNotNullAfterDownloadInseeCog
 from ....metadata import ColumnDataType, StringColumnDataType, StringListColumnDataType, BooleanColumnDataType, DateColumnDataType, IntegerColumnDataType
 
+logger = logging.getLogger(__name__)
+
 
 class TemplatesSQLRequestCOG:
     def __init__(
@@ -228,16 +230,16 @@ class RequestCOG(ABC):
         
     def check_content(self, duckdb_conn : DuckDBPyConnection) -> None:
         """Check if the content of the file is valid"""
-        logging.info(f"Checking content of {self.description} after downloading")
+        logger.info(f"Checking content of {self.description} after downloading")
         controls: list[DataValidationAndConsistencyInseeCog] = [CheckParsingAfterDownloadInseeCog()]
         controls.extend(self.extra_controls)
         nb_controls = len(controls)
         if nb_controls == 0:
-            logging.info(f"No control to run for {self.description} after downloading")
+            logger.info(f"No control to run for {self.description} after downloading")
         for current_step, control in enumerate(controls):
-            logging.info(f"Running check {current_step+1}/{nb_controls}: {type(control).__name__}")
+            logger.info(f"Running check {current_step+1}/{nb_controls}: {type(control).__name__}")
             control.run(request=self, duckdb_conn=duckdb_conn)
-        logging.info(f"All checks passed for {self.description} after downloading")
+        logger.info(f"All checks passed for {self.description} after downloading")
 
 class RequestCOGCommune(RequestCOG):
     """Class to query all communes from the COG"""

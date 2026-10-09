@@ -9,6 +9,8 @@ from typing import TYPE_CHECKING
 
 from .abstract import DataValidationAndConsistencyInseeCog
 
+logger = logging.getLogger(__name__)
+
 if TYPE_CHECKING:
     from ..requests import RequestCOG
 
@@ -46,6 +48,6 @@ class CheckURIUnicityAfterDownloadInseeCog(DataValidationAndConsistencyInseeCog)
         except Exception as e:
             raise RuntimeError(f"Unexpected error while checking duplicated URI of {request.description} after downloading") from e
         
-        logging.info(f"Successfully checked duplicated URI of {request.description} after downloading")
+        logger.info(f"Successfully checked duplicated URI of {request.description} after downloading")
         return True
 

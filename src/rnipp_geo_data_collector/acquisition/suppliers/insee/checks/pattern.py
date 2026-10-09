@@ -8,6 +8,8 @@ from typing import TYPE_CHECKING
 
 from .abstract import DataValidationAndConsistencyInseeCog
 
+logger = logging.getLogger(__name__)
+
 
 if TYPE_CHECKING:
     from ..requests import RequestCOG
@@ -57,6 +59,6 @@ class CheckPatternAfterDownloadInseeCog(DataValidationAndConsistencyInseeCog):
         except Exception as e:
             raise RuntimeError(f"Unexpected error while checking colname '{self.colname}' of {request.description} data after downloading") from e
                   
-        logging.info(f"Successfully checked pattern for colname '{self.colname}' of {request.description} after downloading")
+        logger.info(f"Successfully checked pattern for colname '{self.colname}' of {request.description} after downloading")
         return True
 

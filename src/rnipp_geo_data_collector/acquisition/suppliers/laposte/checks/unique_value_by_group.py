@@ -8,6 +8,8 @@ from typing import TYPE_CHECKING
 
 from .abstract import DataValidationAndConsistencyLaPosteHexasmal
 
+logger = logging.getLogger(__name__)
+
 
 if TYPE_CHECKING:
     from ..requests import RequestLaPosteHexasmal
@@ -53,5 +55,5 @@ class CheckUniqueValueByGroupAfterDownloadLaPosteHexasmal(DataValidationAndConsi
         except Exception as e:
             raise RuntimeError(f"Unexpected error while checking unique value for colname '{self.colname}' by group '{self.group_colname}' of La Poste Hexasmal data after downloading") from e
                   
-        logging.info(f"Successfully checked unique value for colname '{self.colname}' by group '{self.group_colname}' of La Poste Hexasmal data after downloading")
+        logger.info(f"Successfully checked unique value for colname '{self.colname}' by group '{self.group_colname}' of La Poste Hexasmal data after downloading")
         return True

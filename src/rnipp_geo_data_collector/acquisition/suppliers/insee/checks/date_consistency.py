@@ -8,6 +8,8 @@ from typing import TYPE_CHECKING
 
 from .abstract import DataValidationAndConsistencyInseeCog
 
+logger = logging.getLogger(__name__)
+
 if TYPE_CHECKING:
     from ..requests import RequestCOG
 
@@ -48,6 +50,6 @@ class CheckDateConsistencyAfterDownloadInseeCog(DataValidationAndConsistencyInse
         except Exception as e:
             raise RuntimeError(f"Unexpected error while checking date consistency of {request.description} after downloading") from e
         
-        logging.info(f"Successfully checked date consistency of {request.description} after downloading")
+        logger.info(f"Successfully checked date consistency of {request.description} after downloading")
         return True
 

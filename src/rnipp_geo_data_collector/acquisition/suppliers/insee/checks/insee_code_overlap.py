@@ -7,6 +7,8 @@ from duckdb import DuckDBPyConnection
 from typing import TYPE_CHECKING
 
 from .abstract import DataValidationAndConsistencyInseeCog, GlobalDataConsistencyInseeCog
+
+logger = logging.getLogger(__name__)
 if TYPE_CHECKING:
     from ..requests import RequestCOG
 
@@ -53,9 +55,9 @@ def check_insee_code_overlap(requests: list[RequestCOG], duckdb_conn: DuckDBPyCo
         raise RuntimeError("No requests provided")
     elif len(requests) == 1:
         request = requests[0]
-        logging.info(f"Successfully checked INSEE code overlap of {request.description} after downloading")
+        logger.info(f"Successfully checked INSEE code overlap of {request.description} after downloading")
     else:
-        logging.info("Successfully checked INSEE code overlap of all requests")
+        logger.info("Successfully checked INSEE code overlap of all requests")
     return True
 
 class CheckInseeCodeOverlapAfterDownloadInseeCog(DataValidationAndConsistencyInseeCog):

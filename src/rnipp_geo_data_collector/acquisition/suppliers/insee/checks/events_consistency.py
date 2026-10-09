@@ -8,6 +8,8 @@ from typing import TYPE_CHECKING
 
 from .abstract import GlobalDataConsistencyInseeCog
 
+logger = logging.getLogger(__name__)
+
 if TYPE_CHECKING:
     from ..requests import RequestCOG
 
@@ -45,5 +47,5 @@ class CheckEventsConsistencyAfterDownloadInseeCog(GlobalDataConsistencyInseeCog)
                 raise RuntimeError(f"The contents of the COG files are not consistent. The event_uri {event_uri} has multiple dates: {events_dates}")
         except Exception as e:
             raise RuntimeError(f"Unexpected error while checking the contents of the COG files are valid by ensuring that a geographic event is always linked to a single, unique date.")
-        logging.info(f"Successfully checked that each event of the COG file is linked to a single, unique date.")  
+        logger.info(f"Successfully checked that each event of the COG file is linked to a single, unique date.")  
         return True
