@@ -4,12 +4,11 @@ curl -LsSf https://mistral.ai/vibe/install.sh | bash
 echo 'export PATH="/home/onyxia/.local/bin:$PATH"' >> ~/.bashrc
 echo 'export MISTRAL_API_KEY=$OPENAI_API_KEY' >> ~/.bashrc
 
-
-
 cd  $HOME/work/geo-collect/
 python -m venv .venv
 source .venv/bin/activate
 python -m pip install --upgrade pip
+python -m pip install poetry
 poetry install
 
 
