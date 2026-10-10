@@ -45,6 +45,43 @@ from .config import (
 
 logger = logging.getLogger(__name__)
 
+_INSEE_GEO_UUID = "[0-9a-z]{8}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{12}"
+
+_EVENT_URI = rf"http://id.insee.fr/geo/evenementGeographique/{_INSEE_GEO_UUID}"
+_START_EVENT_URI_PATTERN = rf"^{_EVENT_URI}$"
+_END_EVENT_URI_OPTIONAL_PATTERN = rf"^({_EVENT_URI})?$"
+
+_COMMUNE_URI = rf"http://id.insee.fr/geo/commune/{_INSEE_GEO_UUID}"
+_COMMUNE_URI_PATTERN = rf"^{_COMMUNE_URI}$"
+_COMMUNE_URIS_PATTERN = rf"^({_COMMUNE_URI})([|]{_COMMUNE_URI})*$"
+
+_COMMUNE_PARENT_URI = (
+    rf"http://id.insee.fr/geo/(departement|collectiviteDOutreMer)/{_INSEE_GEO_UUID}"
+)
+_COMMUNE_PARENT_URI_PATTERN = rf"^({_COMMUNE_PARENT_URI})([|]{_COMMUNE_PARENT_URI})*$"
+
+_ARRONDISSEMENT_MUNICIPAL_URI = (
+    rf"http://id.insee.fr/geo/arrondissementMunicipal/{_INSEE_GEO_UUID}"
+)
+_ARRONDISSEMENT_MUNICIPAL_URI_PATTERN = rf"^{_ARRONDISSEMENT_MUNICIPAL_URI}$"
+
+_DEPARTEMENT_URI = rf"http://id.insee.fr/geo/departement/{_INSEE_GEO_UUID}"
+_DEPARTEMENT_URI_PATTERN = rf"^{_DEPARTEMENT_URI}$"
+
+_DISTRICT_URI = rf"http://id.insee.fr/geo/district/{_INSEE_GEO_UUID}"
+_DISTRICT_URI_PATTERN = rf"^{_DISTRICT_URI}$"
+
+_COLLECTIVITE_DOM_URI = (
+    rf"http://id.insee.fr/geo/collectiviteDOutreMer/{_INSEE_GEO_UUID}"
+)
+_COLLECTIVITE_DOM_URI_PATTERN = rf"^{_COLLECTIVITE_DOM_URI}$"
+
+_PAYS_URI = rf"http://id.insee.fr/geo/pays/{_INSEE_GEO_UUID}"
+_PAYS_URI_PATTERN = rf"^{_PAYS_URI}$"
+
+_TERRITOIRE_URI = rf"http://id.insee.fr/geo/territoire/{_INSEE_GEO_UUID}"
+_TERRITOIRE_URI_PATTERN = rf"^{_TERRITOIRE_URI}$"
+
 
 class TemplatesSQLRequestCOG:
     def __init__(
@@ -354,7 +391,7 @@ class RequestCOGCommune(RequestCOG):
             extra_controls=[
                 CheckPatternAfterDownloadInseeCog(
                     colname="uri",
-                    pattern=r"^http://id.insee.fr/geo/commune/[0-9a-z]{8}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{12}$",
+                    pattern=_COMMUNE_URI_PATTERN,
                 ),
                 CheckURIUnicityAfterDownloadInseeCog(),
                 CheckPatternAfterDownloadInseeCog(
@@ -366,15 +403,15 @@ class RequestCOGCommune(RequestCOG):
                 ),
                 CheckPatternAfterDownloadInseeCog(
                     colname="parent_uri",
-                    pattern=r"^(http://id.insee.fr/geo/(departement|collectiviteDOutreMer)/[0-9a-z]{8}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{12})([|]http://id.insee.fr/geo/(departement|collectiviteDOutreMer)/[0-9a-z]{8}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{12})*$",
+                    pattern=_COMMUNE_PARENT_URI_PATTERN,
                 ),
                 CheckPatternAfterDownloadInseeCog(
                     colname="start_event_uri",
-                    pattern=r"^http://id.insee.fr/geo/evenementGeographique/[0-9a-z]{8}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{12}$",
+                    pattern=_START_EVENT_URI_PATTERN,
                 ),
                 CheckPatternAfterDownloadInseeCog(
                     colname="end_event_uri",
-                    pattern=r"^(http://id.insee.fr/geo/evenementGeographique/[0-9a-z]{8}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{12})?$",
+                    pattern=_END_EVENT_URI_OPTIONAL_PATTERN,
                 ),
                 CheckEventsUnequalAfterDownloadInseeCog(),
                 CheckStartDateAfterDownloadInseeCog(),
@@ -434,7 +471,7 @@ class RequestCOGArrondissementMunicipal(RequestCOG):
             extra_controls=[
                 CheckPatternAfterDownloadInseeCog(
                     colname="uri",
-                    pattern=r"^http://id.insee.fr/geo/arrondissementMunicipal/[0-9a-z]{8}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{12}$",
+                    pattern=_ARRONDISSEMENT_MUNICIPAL_URI_PATTERN,
                 ),
                 CheckURIUnicityAfterDownloadInseeCog(),
                 CheckPatternAfterDownloadInseeCog(
@@ -445,15 +482,15 @@ class RequestCOGArrondissementMunicipal(RequestCOG):
                 ),
                 CheckPatternAfterDownloadInseeCog(
                     colname="parent_uri",
-                    pattern=r"^(http://id.insee.fr/geo/commune/[0-9a-z]{8}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{12})([|]http://id.insee.fr/geo/commune/[0-9a-z]{8}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{12})*$",
+                    pattern=_COMMUNE_URIS_PATTERN,
                 ),
                 CheckPatternAfterDownloadInseeCog(
                     colname="start_event_uri",
-                    pattern=r"^http://id.insee.fr/geo/evenementGeographique/[0-9a-z]{8}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{12}$",
+                    pattern=_START_EVENT_URI_PATTERN,
                 ),
                 CheckPatternAfterDownloadInseeCog(
                     colname="end_event_uri",
-                    pattern=r"^(http://id.insee.fr/geo/evenementGeographique/[0-9a-z]{8}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{12})?$",
+                    pattern=_END_EVENT_URI_OPTIONAL_PATTERN,
                 ),
                 CheckEventsUnequalAfterDownloadInseeCog(),
                 CheckStartDateAfterDownloadInseeCog(),
@@ -506,7 +543,7 @@ class RequestCOGDepartement(RequestCOG):
             extra_controls=[
                 CheckPatternAfterDownloadInseeCog(
                     colname="uri",
-                    pattern=r"^http://id.insee.fr/geo/departement/[0-9a-z]{8}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{12}$",
+                    pattern=_DEPARTEMENT_URI_PATTERN,
                 ),
                 CheckURIUnicityAfterDownloadInseeCog(),
                 CheckPatternAfterDownloadInseeCog(
@@ -519,11 +556,11 @@ class RequestCOGDepartement(RequestCOG):
                 CheckNotNullAfterDownloadInseeCog(colname="is_france_metropolitaine"),
                 CheckPatternAfterDownloadInseeCog(
                     colname="start_event_uri",
-                    pattern=r"^http://id.insee.fr/geo/evenementGeographique/[0-9a-z]{8}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{12}$",
+                    pattern=_START_EVENT_URI_PATTERN,
                 ),
                 CheckPatternAfterDownloadInseeCog(
                     colname="end_event_uri",
-                    pattern=r"^(http://id.insee.fr/geo/evenementGeographique/[0-9a-z]{8}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{12})?$",
+                    pattern=_END_EVENT_URI_OPTIONAL_PATTERN,
                 ),
                 CheckEventsUnequalAfterDownloadInseeCog(),
                 CheckStartDateAfterDownloadInseeCog(),
@@ -573,7 +610,7 @@ class RequestsCOGDistrict(RequestCOG):
             extra_controls=[
                 CheckPatternAfterDownloadInseeCog(
                     colname="uri",
-                    pattern=r"^http://id.insee.fr/geo/district/[0-9a-z]{8}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{12}$",
+                    pattern=_DISTRICT_URI_PATTERN,
                 ),
                 CheckURIUnicityAfterDownloadInseeCog(),
                 CheckPatternAfterDownloadInseeCog(
@@ -584,11 +621,11 @@ class RequestsCOGDistrict(RequestCOG):
                 ),
                 CheckPatternAfterDownloadInseeCog(
                     colname="start_event_uri",
-                    pattern=r"^http://id.insee.fr/geo/evenementGeographique/[0-9a-z]{8}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{12}$",
+                    pattern=_START_EVENT_URI_PATTERN,
                 ),
                 CheckPatternAfterDownloadInseeCog(
                     colname="end_event_uri",
-                    pattern=r"^(http://id.insee.fr/geo/evenementGeographique/[0-9a-z]{8}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{12})?$",
+                    pattern=_END_EVENT_URI_OPTIONAL_PATTERN,
                 ),
                 CheckEventsUnequalAfterDownloadInseeCog(),
                 CheckStartDateAfterDownloadInseeCog(),
@@ -645,23 +682,24 @@ class RequestsCOGCollectivitesOutremer(RequestCOG):
             extra_controls=[
                 CheckPatternAfterDownloadInseeCog(
                     colname="uri",
-                    pattern=r"^http://id.insee.fr/geo/collectiviteDOutreMer/[0-9a-z]{8}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{12}$",
+                    pattern=_COLLECTIVITE_DOM_URI_PATTERN,
                 ),
                 CheckURIUnicityAfterDownloadInseeCog(),
                 CheckPatternAfterDownloadInseeCog(
                     colname="insee_code",
-                    pattern=r"^(95|96|975|976|977|978|981|984|985|986|987|988|989|98[0-9]{3})$",
+                    pattern=r"^(95|96|975|976|977|978|981|984|985|986|987|988|989"
+                    r"|98[0-9]{3})$",
                 ),
                 CheckPatternAfterDownloadInseeCog(
                     colname="article_code", pattern=r"^[0-8X]$"
                 ),
                 CheckPatternAfterDownloadInseeCog(
                     colname="start_event_uri",
-                    pattern=r"^http://id.insee.fr/geo/evenementGeographique/[0-9a-z]{8}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{12}$",
+                    pattern=_START_EVENT_URI_PATTERN,
                 ),
                 CheckPatternAfterDownloadInseeCog(
                     colname="end_event_uri",
-                    pattern=r"^(http://id.insee.fr/geo/evenementGeographique/[0-9a-z]{8}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{12})?$",
+                    pattern=_END_EVENT_URI_OPTIONAL_PATTERN,
                 ),
                 CheckEventsUnequalAfterDownloadInseeCog(),
                 CheckStartDateAfterDownloadInseeCog(),
@@ -713,7 +751,7 @@ class RequestsCOGPays(RequestCOG):
             extra_controls=[
                 CheckPatternAfterDownloadInseeCog(
                     colname="uri",
-                    pattern=r"^http://id.insee.fr/geo/pays/[0-9a-z]{8}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{12}$",
+                    pattern=_PAYS_URI_PATTERN,
                 ),
                 CheckURIUnicityAfterDownloadInseeCog(),
                 CheckPatternAfterDownloadInseeCog(
@@ -733,11 +771,11 @@ class RequestsCOGPays(RequestCOG):
                 ),
                 CheckPatternAfterDownloadInseeCog(
                     colname="start_event_uri",
-                    pattern=r"^http://id.insee.fr/geo/evenementGeographique/[0-9a-z]{8}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{12}$",
+                    pattern=_START_EVENT_URI_PATTERN,
                 ),
                 CheckPatternAfterDownloadInseeCog(
                     colname="end_event_uri",
-                    pattern=r"^(http://id.insee.fr/geo/evenementGeographique/[0-9a-z]{8}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{12})?$",
+                    pattern=_END_EVENT_URI_OPTIONAL_PATTERN,
                 ),
                 CheckEventsUnequalAfterDownloadInseeCog(),
                 CheckStartDateAfterDownloadInseeCog(),
@@ -794,7 +832,7 @@ class RequestsCOGTerritoires(RequestCOG):
             extra_controls=[
                 CheckPatternAfterDownloadInseeCog(
                     colname="uri",
-                    pattern=r"^http://id.insee.fr/geo/territoire/[0-9a-z]{8}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{12}$",
+                    pattern=_TERRITOIRE_URI_PATTERN,
                 ),
                 CheckURIUnicityAfterDownloadInseeCog(),
                 CheckPatternAfterDownloadInseeCog(
@@ -814,11 +852,11 @@ class RequestsCOGTerritoires(RequestCOG):
                 ),
                 CheckPatternAfterDownloadInseeCog(
                     colname="start_event_uri",
-                    pattern=r"^http://id.insee.fr/geo/evenementGeographique/[0-9a-z]{8}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{12}$",
+                    pattern=_START_EVENT_URI_PATTERN,
                 ),
                 CheckPatternAfterDownloadInseeCog(
                     colname="end_event_uri",
-                    pattern=r"^(http://id.insee.fr/geo/evenementGeographique/[0-9a-z]{8}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{12})?$",
+                    pattern=_END_EVENT_URI_OPTIONAL_PATTERN,
                 ),
                 CheckEventsUnequalAfterDownloadInseeCog(),
                 CheckStartDateAfterDownloadInseeCog(),
