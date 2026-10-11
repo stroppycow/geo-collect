@@ -64,7 +64,7 @@ class CheckUniqueValueByGroupAfterDownloadLaPosteHexasmal(
                         The file may be corrupted or not in the expected format.
                         Value '{colname_bug}' for colname {self.colname}
                         is not unique for group {group_colname_bug}
-                        """.repace("\r\n", "\n")
+                        """.replace("\r\n", "\n")
                         .replace("\n", " ")
                         .replace("\t", " "),
                         pattern=r"[ ]+",
@@ -78,7 +78,7 @@ class CheckUniqueValueByGroupAfterDownloadLaPosteHexasmal(
                     Unexpected error while checking unique value for colname
                     '{self.colname}' by group '{self.group_colname}'
                     of La Poste Hexasmal data after downloading
-                    """.repace("\r\n", "\n")
+                    """.replace("\r\n", "\n")
                     .replace("\n", " ")
                     .replace("\t", " "),
                     pattern=r"[ ]+",
@@ -92,7 +92,7 @@ class CheckUniqueValueByGroupAfterDownloadLaPosteHexasmal(
                 Successfully checked unique value for colname
                 '{self.colname}' by group '{self.group_colname}'
                 of La Poste Hexasmal data after downloading
-                """.repace("\r\n", "\n")
+                """.replace("\r\n", "\n")
                 .replace("\n", " ")
                 .replace("\t", " "),
                 pattern=r"[ ]+",

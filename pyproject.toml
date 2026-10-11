@@ -46,8 +46,19 @@ include = ["rnipp_geo_data_collector*"]
 geo_data_collector = "rnipp_geo_data_collector.cli:app"
 [dependency-groups]
 dev = [
-    "ipykernel (>=7.2.0,<8.0.0)"
+    "ipykernel (>=7.2.0,<8.0.0)",
+    "ruff (>=0.17.0,<0.18.0)",
+    "pyright (>=1.1.414,<2.0.0)"
 ]
+
+[tool.pyright]
+# Analyse du code source et des tests.
+include = ["src", "tests"]
+pythonVersion = "3.11"
+# Environnement virtuel du projet pour la résolution des imports.
+venvPath = "."
+venv = ".venv"
+typeCheckingMode = "standard"
 
 [tool.ruff.lint]
 # EM101/EM102 (message d'exception en littéral/f-string) et TRY003 (message

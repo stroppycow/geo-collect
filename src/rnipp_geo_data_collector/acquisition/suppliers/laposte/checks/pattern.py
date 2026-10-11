@@ -62,7 +62,7 @@ class CheckPatternAfterDownloadLaPosteHexasmal(
                         The file may be corrupted or not in the expected format.
                         Value '{colname_bug}' for colname {self.colname}
                         is not valid at row {row_number_bug}
-                        """.repace("\r\n", "\n")
+                        """.replace("\r\n", "\n")
                         .replace("\n", " ")
                         .replace("\t", " "),
                         pattern=r"[ ]+",
@@ -75,7 +75,7 @@ class CheckPatternAfterDownloadLaPosteHexasmal(
                     string=f"""
                     Unexpected error while checking '{self.colname}
                     of La Poste Hexasmal data after downloading
-                    """.repace("\r\n", "\n")
+                    """.replace("\r\n", "\n")
                     .replace("\n", " ")
                     .replace("\t", " "),
                     pattern=r"[ ]+",
@@ -88,7 +88,7 @@ class CheckPatternAfterDownloadLaPosteHexasmal(
                 string=f"""
                 Successfully checked pattern for colname '{self.colname}'
                 of La Poste Hexasmal data after downloading
-                """.repace("\r\n", "\n")
+                """.replace("\r\n", "\n")
                 .replace("\n", " ")
                 .replace("\t", " "),
                 pattern=r"[ ]+",

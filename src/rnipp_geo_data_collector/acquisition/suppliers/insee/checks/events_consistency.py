@@ -66,22 +66,7 @@ class CheckEventsConsistencyAfterDownloadInseeCog(GlobalDataConsistencyInseeCog)
 
         try:
             data_bug = duckdb_conn.sql(rendered_str).fetchall()
-            if len(data_bug) > 0:
-                event_uri = data_bug[0][0]
-                events_dates = data_bug[0][1]
-                raise RuntimeError(
-                    re.sub(
-                        string=f"""
-                        The contents of the COG files are not consistent.
-                        The event_uri {event_uri} has multiple dates: {events_dates}
-                        """.repace("\r\n", "\n")
-                        .replace("\n", " ")
-                        .replace("\t", " "),
-                        pattern=r"[ ]+",
-                        repl=" ",
-                    )
-                )
-        except Exception:
+        except Exception as e:
             raise RuntimeError(
                 re.sub(
                     string="""
@@ -89,7 +74,23 @@ class CheckEventsConsistencyAfterDownloadInseeCog(GlobalDataConsistencyInseeCog)
                     of the COG files are valid by ensuring
                     that a geographic event is always linked
                     to a single, unique date.
-                    """.repace("\r\n", "\n")
+                    """.replace("\r\n", "\n")
+                    .replace("\n", " ")
+                    .replace("\t", " "),
+                    pattern=r"[ ]+",
+                    repl=" ",
+                )
+            ) from e
+
+        if len(data_bug) > 0:
+            event_uri = data_bug[0][0]
+            events_dates = data_bug[0][1]
+            raise RuntimeError(
+                re.sub(
+                    string=f"""
+                    The contents of the COG files are not consistent.
+                    The event_uri {event_uri} has multiple dates: {events_dates}
+                    """.replace("\r\n", "\n")
                     .replace("\n", " ")
                     .replace("\t", " "),
                     pattern=r"[ ]+",
@@ -101,7 +102,7 @@ class CheckEventsConsistencyAfterDownloadInseeCog(GlobalDataConsistencyInseeCog)
                 string=""""
                 Successfully checked that each event
                 of the COG file is linked to a single, unique date.
-                """.repace("\r\n", "\n")
+                """.replace("\r\n", "\n")
                 .replace("\n", " ")
                 .replace("\t", " "),
                 pattern=r"[ ]+",

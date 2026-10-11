@@ -17,7 +17,7 @@ def init_duckdb_connection(
     Init a DuckDB connection with the required extensions and configurations.
     """
 
-    config: dict[str, str] = {
+    config: dict[str, str | bool | int | float | list[str]] = {
         "max_temp_directory_size": max_temp_directory_size,
         "threads": str(threads),
         "memory_limit": memory_limit,

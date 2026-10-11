@@ -11,6 +11,7 @@ python -m pip install --upgrade pip
 python -m pip install poetry
 poetry install
 
+code-server --install-extension ms-pyright.pyright
 
 # Path to the VSCode settings.json file
 SETTINGS_FILE="${HOME}/.local/share/code-server/User/settings.json"

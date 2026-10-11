@@ -53,7 +53,7 @@ class CheckDateConsistencyAfterDownloadInseeCog(DataValidationAndConsistencyInse
                         The file may be corrupted or not in the expected format.
                         The start date {start_date_bug} is after the end date
                         {end_date_bug} at row {row_number_bug} for the URI {uri_bug}
-                        """.repace("\r\n", "\n")
+                        """.replace("\r\n", "\n")
                         .replace("\n", " ")
                         .replace("\t", " "),
                         pattern=r"[ ]+",
@@ -67,7 +67,7 @@ class CheckDateConsistencyAfterDownloadInseeCog(DataValidationAndConsistencyInse
                     string=f"""
                     Unexpected error while checking date consistency
                     of {request.description} after downloading
-                    """.repace("\r\n", "\n")
+                    """.replace("\r\n", "\n")
                     .replace("\n", " ")
                     .replace("\t", " "),
                     pattern=r"[ ]+",

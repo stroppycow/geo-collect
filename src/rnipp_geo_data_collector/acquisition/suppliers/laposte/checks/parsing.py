@@ -59,7 +59,7 @@ class CheckParsingAfterDownloadLaPosteHexasmal(
                     string="""
                     Failed to copy La Poste Hexasmal data after downloading.
                     The file may be corrupted or not in the expected format.
-                    """.repace("\r\n", "\n")
+                    """.replace("\r\n", "\n")
                     .replace("\n", " ")
                     .replace("\t", " "),
                     pattern=r"[ ]+",
@@ -102,7 +102,7 @@ class CheckParsingAfterDownloadLaPosteHexasmal(
                     string="""
                     Failed to load La Poste Hexasmal data after downloading.
                     The file may be corrupted or not in the expected format.
-                    """.repace("\r\n", "\n")
+                    """.replace("\r\n", "\n")
                     .replace("\n", " ")
                     .replace("\t", " "),
                     pattern=r"[ ]+",

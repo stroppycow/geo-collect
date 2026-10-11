@@ -58,7 +58,7 @@ class CheckSingleAssociatedNameAfterDownloadLaPosteHexasmal(
                         The file may be corrupted or not in the expected format.
                         INSEE code {insee_code_bug} is associated with only one
                         row/observation, but the additional label (i.e., ligne_5) is missing
-                        """.repace("\r\n", "\n")
+                        """.replace("\r\n", "\n")
                         .replace("\n", " ")
                         .replace("\t", " "),
                         pattern=r"[ ]+",
@@ -71,7 +71,7 @@ class CheckSingleAssociatedNameAfterDownloadLaPosteHexasmal(
                     string="""
                     "Unexpected error while checking single associated name
                     of La Poste Hexasmal data after downloading
-                    """.repace("\r\n", "\n")
+                    """.replace("\r\n", "\n")
                     .replace("\n", " ")
                     .replace("\t", " "),
                     pattern=r"[ ]+",
@@ -86,7 +86,7 @@ class CheckSingleAssociatedNameAfterDownloadLaPosteHexasmal(
                 associated with only one row/observation,
                 the additional label (i.e., ligne_5) is missing
                 of La Poste Hexasmal data after downloading
-                """.repace("\r\n", "\n")
+                """.replace("\r\n", "\n")
                 .replace("\n", " ")
                 .replace("\t", " "),
                 pattern=r"[ ]+",

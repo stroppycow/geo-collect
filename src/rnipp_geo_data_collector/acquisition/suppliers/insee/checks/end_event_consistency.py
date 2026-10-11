@@ -60,7 +60,7 @@ class CheckEndEventConsistencyAfterDownloadInseeCog(
                             The end event is empty whereas end date is not empty.
                             Row number: {row_number_bug}, URI: {uri_bug},
                             end_event: {end_event_bug}, end_date: {end_date_bug}.
-                            """.repace("\r\n", "\n")
+                            """.replace("\r\n", "\n")
                             .replace("\n", " ")
                             .replace("\t", " "),
                             pattern=r"[ ]+",
@@ -76,7 +76,7 @@ class CheckEndEventConsistencyAfterDownloadInseeCog(
                             The end event is not empty whereas end date is empty.
                             Row number: {row_number_bug}, URI: {uri_bug},
                             end_event: {end_event_bug}, end_date: {end_date_bug}.
-                            """.repace("\r\n", "\n")
+                            """.replace("\r\n", "\n")
                             .replace("\n", " ")
                             .replace("\t", " "),
                             pattern=r"[ ]+",
@@ -89,7 +89,7 @@ class CheckEndEventConsistencyAfterDownloadInseeCog(
                     string=f"""
                     Unexpected error while checking end event consistency
                     of {request.description} after downloading
-                    """.repace("\r\n", "\n")
+                    """.replace("\r\n", "\n")
                     .replace("\n", " ")
                     .replace("\t", " "),
                     pattern=r"[ ]+",

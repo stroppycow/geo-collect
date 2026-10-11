@@ -63,7 +63,7 @@ class CheckAssociatedNameAfterDownloadLaPosteHexasmal(
                         is associated with multiple rows/observations, but the additional
                         labels (i.e., ligne_5) have more than one missing value:
                         {associated_names_bug}
-                        """.repace("\r\n", "\n")
+                        """.replace("\r\n", "\n")
                         .replace("\n", " ")
                         .replace("\t", " "),
                         pattern=r"[ ]+",
@@ -76,7 +76,7 @@ class CheckAssociatedNameAfterDownloadLaPosteHexasmal(
                     string="""
                     Unexpected error while checking multiple associated names
                     of La Poste Hexasmal data after downloading
-                    """.repace("\r\n", "\n")
+                    """.replace("\r\n", "\n")
                     .replace("\n", " ")
                     .replace("\t", " "),
                     pattern=r"[ ]+",
@@ -90,7 +90,7 @@ class CheckAssociatedNameAfterDownloadLaPosteHexasmal(
                 "Successfully checked that if an INSEE code is associated with
                 multiple rows/observations, the additional labels (i.e., ligne_5)
                 have at most one missing value of La Poste Hexasmal data after downloading
-                """.repace("\r\n", "\n")
+                """.replace("\r\n", "\n")
                 .replace("\n", " ")
                 .replace("\t", " "),
                 pattern=r"[ ]+",

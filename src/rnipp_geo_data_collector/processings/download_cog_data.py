@@ -1,4 +1,5 @@
 import logging
+import re
 from pathlib import Path
 
 import duckdb
@@ -326,10 +327,16 @@ def download_cog_data(
     ]
 
     logger.info(
-        """
-        Check, for the "Communes" data, the existence of URIs of the parent geographic entities
-        (department or overseas collectivity).
-        """
+        re.sub(
+            string="""
+            Check, for the "Communes" data, the existence of URIs of the parent geographic entities
+            (department or overseas collectivity).
+            """.replace("\r\n", "\n")
+            .replace("\n", " ")
+            .replace("\t", " "),
+            pattern=r"[ ]+",
+            repl=" ",
+        )
     )
     CheckParentURIsExistAfterDownloadInseeCog(
         parents_view_name=[
@@ -338,10 +345,16 @@ def download_cog_data(
         ]
     ).run(request=request_insee_commune, duckdb_conn=duckdb_conn)
     logger.info(
-        """
-        Check, for the "Communes" data, that the validity periods
-        of the parent geographic entities of a municipality do not overlap.
-        """
+        re.sub(
+            string="""
+            Check, for the "Communes" data, that the validity periods
+            of the parent geographic entities of a municipality do not overlap.
+            """.replace("\r\n", "\n")
+            .replace("\n", " ")
+            .replace("\t", " "),
+            pattern=r"[ ]+",
+            repl=" ",
+        )
     )
     CheckParentPeriodOverlapAfterDownloadInseeCog(
         parents_view_name=[
@@ -350,11 +363,17 @@ def download_cog_data(
         ]
     ).run(request=request_insee_commune, duckdb_conn=duckdb_conn)
     logger.info(
-        """
-        Check, for the "Communes" data, that the union of the validity periods of
-        the parent geographic entities of a municipality forms a continuous interval
-        (i.e., there are no “gaps”).
-        """
+        re.sub(
+            string="""
+            Check, for the "Communes" data, that the union of the validity periods of
+            the parent geographic entities of a municipality forms a continuous interval
+            (i.e., there are no “gaps”).
+            """.replace("\r\n", "\n")
+            .replace("\n", " ")
+            .replace("\t", " "),
+            pattern=r"[ ]+",
+            repl=" ",
+        )
     )
     CheckParentPeriodNoGapsAfterDownloadInseeCog(
         parents_view_name=[
@@ -363,11 +382,17 @@ def download_cog_data(
         ]
     ).run(request=request_insee_commune, duckdb_conn=duckdb_conn)
     logger.info(
-        """
-        Verify that, for the "Communes" data, the municipality’s validity period
-        is indeed included in the union of the validity periods of
-        its parent geographic entities.
-        """
+        re.sub(
+            string="""
+            Verify that, for the "Communes" data, the municipality’s validity period
+            is indeed included in the union of the validity periods of
+            its parent geographic entities.
+            """.replace("\r\n", "\n")
+            .replace("\n", " ")
+            .replace("\t", " "),
+            pattern=r"[ ]+",
+            repl=" ",
+        )
     )
     CheckParentPeriodsContainChildPeriodAfterDownloadInseeCog(
         parents_view_name=[
@@ -376,58 +401,94 @@ def download_cog_data(
         ]
     ).run(request=request_insee_commune, duckdb_conn=duckdb_conn)
     logger.info(
-        """
-        Check, for "Arrondissements Municipaux" data, the existence of the
-        URIs of the parent geographic entities (municipalities).'
-        """
+        re.sub(
+            string="""
+            Check, for "Arrondissements Municipaux" data, the existence of the
+            URIs of the parent geographic entities (municipalities).'
+            """.replace("\r\n", "\n")
+            .replace("\n", " ")
+            .replace("\t", " "),
+            pattern=r"[ ]+",
+            repl=" ",
+        )
     )
     CheckParentURIsExistAfterDownloadInseeCog(
         parents_view_name=[request_insee_commune.view_name]
     ).run(request=request_insee_arrondissements_municipaux, duckdb_conn=duckdb_conn)
     logger.info(
-        """
-        Check, for the "Arrondissements Municipaux" data, that the validity periods
-        of the parent geographic entities of a municipality do not overlap.'
-        """
+        re.sub(
+            string="""
+            Check, for the "Arrondissements Municipaux" data, that the validity periods
+            of the parent geographic entities of a municipality do not overlap.'
+            """.replace("\r\n", "\n")
+            .replace("\n", " ")
+            .replace("\t", " "),
+            pattern=r"[ ]+",
+            repl=" ",
+        )
     )
     CheckParentPeriodOverlapAfterDownloadInseeCog(
         parents_view_name=[request_insee_commune.view_name]
     ).run(request=request_insee_arrondissements_municipaux, duckdb_conn=duckdb_conn)
     logger.info(
-        """
-        Check, for the "Arrondissements Municipaux" data, that the union of the validity periods
-        of the parent geographic entities of a municipality
-        forms a continuous interval (i.e., there are no “gaps”).'
-        """
+        re.sub(
+            string="""
+            Check, for the "Arrondissements Municipaux" data, that the union of the validity periods
+            of the parent geographic entities of a municipality
+            forms a continuous interval (i.e., there are no “gaps”).'
+            """.replace("\r\n", "\n")
+            .replace("\n", " ")
+            .replace("\t", " "),
+            pattern=r"[ ]+",
+            repl=" ",
+        )
     )
     CheckParentPeriodNoGapsAfterDownloadInseeCog(
         parents_view_name=[request_insee_commune.view_name]
     ).run(request=request_insee_arrondissements_municipaux, duckdb_conn=duckdb_conn)
     logger.info(
-        """
-        Verify that, for the "Arrondissements Municipaux" data, the municipality’s
-        validity period is indeed included in the union
-        of the validity periods of its parent geographic entities.'
-        """
+        re.sub(
+            string="""
+            Verify that, for the "Arrondissements Municipaux" data, the municipality’s
+            validity period is indeed included in the union
+            of the validity periods of its parent geographic entities.'
+            """.replace("\r\n", "\n")
+            .replace("\n", " ")
+            .replace("\t", " "),
+            pattern=r"[ ]+",
+            repl=" ",
+        )
     )
     CheckParentPeriodsContainChildPeriodAfterDownloadInseeCog(
         parents_view_name=[request_insee_commune.view_name]
     ).run(request=request_insee_arrondissements_municipaux, duckdb_conn=duckdb_conn)
     logger.info(
-        """
-        Check that the URIs of all geographic events are
-        associated with only a single, unique event date.
-        """
+        re.sub(
+            string="""
+            Check that the URIs of all geographic events are
+            associated with only a single, unique event date.
+            """.replace("\r\n", "\n")
+            .replace("\n", " ")
+            .replace("\t", " "),
+            pattern=r"[ ]+",
+            repl=" ",
+        )
     )
     CheckEventsConsistencyAfterDownloadInseeCog().run(
         requests=requests_insee_list, duckdb_conn=duckdb_conn
     )
     logger.info(
-        """
-        Verify that there are no overlapping periods for a given INSEE code
-        (regardless of the type of geographical entity), i.e., that there are not two URIs
-        associated with the same INSEE code whose validity periods intersect.
-        """
+        re.sub(
+            string="""
+            Verify that there are no overlapping periods for a given INSEE code
+            (regardless of the type of geographical entity), i.e., that there are not two URIs
+            associated with the same INSEE code whose validity periods intersect.
+            """.replace("\r\n", "\n")
+            .replace("\n", " ")
+            .replace("\t", " "),
+            pattern=r"[ ]+",
+            repl=" ",
+        )
     )
     CheckGlobalInseeCodeOverlapAfterDownloadInseeCog().run(
         requests=requests_insee_list, duckdb_conn=duckdb_conn

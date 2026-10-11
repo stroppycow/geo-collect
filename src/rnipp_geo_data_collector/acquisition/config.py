@@ -1,5 +1,6 @@
 import json
 from pathlib import Path
+from typing import TypeVar
 
 import yaml
 from pydantic import BaseModel, ValidationError
@@ -13,7 +14,6 @@ from .suppliers.laposte.config import (
     LaPosteExceptionsToIgnoreOrCorrect,
     LaPosteSupplierConfig,
 )
-from .suppliers.wikidata import WikidataSupplierConfig
 
 
 def _load_config_data(file_path: Path) -> dict:
@@ -35,7 +35,10 @@ def _load_config_data(file_path: Path) -> dict:
     return config_data
 
 
-def _from_file(cls: type[BaseModel], file_path: str | Path) -> BaseModel:
+ModelT = TypeVar("ModelT", bound=BaseModel)
+
+
+def _from_file(cls: type[ModelT], file_path: str | Path) -> ModelT:
     """Build a config model from a JSON or YAML file."""
     if isinstance(file_path, str):
         file_path = Path(file_path)
@@ -53,7 +56,6 @@ def _from_file(cls: type[BaseModel], file_path: str | Path) -> BaseModel:
 class AcquisitionConfig(BaseModel):
     insee: InseeSupplierConfig = InseeSupplierConfig()
     laposte: LaPosteSupplierConfig = LaPosteSupplierConfig()
-    wikidata: WikidataSupplierConfig = WikidataSupplierConfig()
 
     model_config = SettingsConfigDict(
         env_prefix="GEOCOLLECT_", env_nested_delimiter="__"

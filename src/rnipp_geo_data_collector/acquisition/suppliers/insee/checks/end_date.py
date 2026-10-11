@@ -57,7 +57,7 @@ class CheckEndDateAfterDownloadInseeCog(DataValidationAndConsistencyInseeCog):
                             The file may be corrupted or not in the expected format.
                             The end date {end_date_bug} is older than the minimum date
                             1943-01-01 at row {row_number_bug} for the URI {uri_bug}
-                            """.repace("\r\n", "\n")
+                            """.replace("\r\n", "\n")
                             .replace("\n", " ")
                             .replace("\t", " "),
                             pattern=r"[ ]+",
@@ -73,7 +73,7 @@ class CheckEndDateAfterDownloadInseeCog(DataValidationAndConsistencyInseeCog):
                             The end date {end_date_bug} is newer than the maximum date
                             {datetime.datetime.now(tz=datetime.UTC).strftime("%Y-%m-%d")} at row
                             {row_number_bug} for the URI {uri_bug}
-                            """.repace("\r\n", "\n")
+                            """.replace("\r\n", "\n")
                             .replace("\n", " ")
                             .replace("\t", " "),
                             pattern=r"[ ]+",
@@ -88,7 +88,7 @@ class CheckEndDateAfterDownloadInseeCog(DataValidationAndConsistencyInseeCog):
                             The file may be corrupted or not in the expected format.
                             The end date is duplicated {end_date_count_bug}
                             for the URI {uri_bug}
-                            """.repace("\r\n", "\n")
+                            """.replace("\r\n", "\n")
                             .replace("\n", " ")
                             .replace("\t", " "),
                             pattern=r"[ ]+",
@@ -101,7 +101,7 @@ class CheckEndDateAfterDownloadInseeCog(DataValidationAndConsistencyInseeCog):
                             string=f"""
                             Unexpected error while checking end date of
                             {request.description} after downloading
-                            """.repace("\r\n", "\n")
+                            """.replace("\r\n", "\n")
                             .replace("\n", " ")
                             .replace("\t", " "),
                             pattern=r"[ ]+",
@@ -114,7 +114,7 @@ class CheckEndDateAfterDownloadInseeCog(DataValidationAndConsistencyInseeCog):
                     string=f"""
                     Unexpected error while checking end date of
                     {request.description} after downloading
-                    """.repace("\r\n", "\n")
+                    """.replace("\r\n", "\n")
                     .replace("\n", " ")
                     .replace("\t", " "),
                     pattern=r"[ ]+",
