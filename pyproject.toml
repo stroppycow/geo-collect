@@ -50,6 +50,10 @@ dev = [
     "ruff (>=0.17.0,<0.18.0)",
     "pyright (>=1.1.414,<2.0.0)"
 ]
+docs = [
+    "mkdocs-material (>=9.7.7,<10.0.0)",
+    "mkdocstrings[python] (>=1.0.7,<2.0.0)"
+]
 
 [tool.pyright]
 # Analyse du code source et des tests.

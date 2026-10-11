@@ -1,0 +1,93 @@
+site_name: Geo Collect
+site_description: Geographic data collector — INSEE COG and LaPoste Hexasmal
+site_url: https://stroppycow.github.io/geo-collect/
+repo_url: https://github.com/stroppycow/geo-collect
+repo_name: stroppycow/geo-collect
+edit_uri: edit/main/docs/
+
+theme:
+  name: material
+  language: en
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.top
+    - navigation.path
+    - content.code.copy
+    - content.tool.cutoff
+    - toc.follow
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/weather-night
+        name: Passer au mode sombre
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/weather-sunny
+        name: Passer au mode clair
+
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.tabbed:
+      alternate_style: true
+  - attr_list
+  - md_in_html
+  - tables
+  - toc:
+      permalink: true
+
+plugins:
+  - search
+  - mkdocstrings:
+      handlers:
+        python:
+          paths: [src]
+          options:
+            docstring_style: google
+            show_source: true
+            separate_signature: true
+            show_signature_annotations: true
+
+nav:
+  - Home: index.md
+  - Tutorial:
+      - First run: tutorials/first-run.md
+  - How-to guides:
+      - Configure acquisition: how-to/configure-acquisition.md
+      - Handle exceptions: how-to/handle-exceptions.md
+      - Tune performance: how-to/tune-performance.md
+      - Run in Docker: how-to/run-in-docker.md
+  - Understanding:
+      - Process methodology: explanation/methodology.md
+      - Technical architecture: explanation/architecture.md
+      - Step cards:
+          - Step card template: explanation/steps/step-card-template.md
+          - "01 — Download the INSEE COG": explanation/steps/01-download-insee-cog.md
+          - "02 — Download LaPoste Hexasmal": explanation/steps/02-download-laposte.md
+          - "03 — Metropolitan France correction": explanation/steps/03-metropolitan-france-correction.md
+          - "04 — Communes typology": explanation/steps/04-communes-typology.md
+          - "05 — Postal codes merge": explanation/steps/05-postal-codes-merge.md
+  - Reference:
+      - CLI: reference/cli.md
+      - Configuration: reference/configuration.md
+      - Data model: reference/metadata.md
+      - Acquisition API: reference/acquisition.md
+      - Processings API: reference/processings.md
+      - Graph API: reference/graph.md
+  - Contributing:
+      - Modify a step: contributor/modify-a-step.md
+      - Update the documentation: contributor/update-documentation.md

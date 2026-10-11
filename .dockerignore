@@ -1,0 +1,26 @@
+# VCS
+.git
+.gitignore
+
+# Python
+.venv
+venv
+__pycache__
+*.py[cod]
+*.egg-info
+build/
+dist/
+
+# Project artefacts
+output/
+site/
+
+# Not needed at runtime
+docs/
+tests/
+.github/
+mkdocs.yml
+Dockerfile
+.dockerignore
+*.log
+.DS_Store
