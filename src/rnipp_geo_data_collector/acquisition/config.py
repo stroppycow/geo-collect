@@ -1,6 +1,5 @@
 import json
 from pathlib import Path
-from typing import TypeVar
 
 import yaml
 from pydantic import BaseModel, ValidationError
@@ -35,10 +34,7 @@ def _load_config_data(file_path: Path) -> dict:
     return config_data
 
 
-ModelT = TypeVar("ModelT", bound=BaseModel)
-
-
-def _from_file(cls: type[ModelT], file_path: str | Path) -> ModelT:
+def _from_file[ModelT: BaseModel](cls: type[ModelT], file_path: str | Path) -> ModelT:
     """Build a config model from a JSON or YAML file."""
     if isinstance(file_path, str):
         file_path = Path(file_path)
