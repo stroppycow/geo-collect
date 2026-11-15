@@ -15,7 +15,7 @@ insee:
   connect_timeout: 20   # connection timeout (s)
   read_timeout: 25      # read timeout (s)
 laposte:
-  endpoint_url: "https://datanova.laposte.fr/data-fair/api/v1/datasets/laposte-hexasmal/raw"
+  endpoint_url: "https://data.laposte.fr/data-fair/api/v1/datasets/laposte-hexasmal/raw"
   backoff_factor: 0.5
   max_retries: 5
   connect_timeout: 20

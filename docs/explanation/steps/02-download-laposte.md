@@ -33,7 +33,7 @@ step 05.
 ```mermaid
 flowchart LR
     E01[01 · INSEE COG] --> E02
-    B[Hexasmal API<br/>datanova.laposte.fr] --> E02
+    B[Hexasmal API<br/>data.laposte.fr] --> E02
     E02["02 · LaPoste<br/>(this step)"] --> E03[03 · Metropolitan France]
 ```
 

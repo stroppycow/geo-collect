@@ -3,7 +3,7 @@
 **geo-collect** assembles the history of French geographic entities
 (communes, municipal arrondissements, départements, overseas collectivities,
 districts, countries) from the [INSEE COG](https://www.insee.fr/en/information/2560452)
-and [LaPoste Hexasmal](https://datanova.laposte.fr/data-fair/api/v1/datasets/laposte-hexasmal/raw)
+and [LaPoste Hexasmal](https://data.laposte.fr/data-fair/api/v1/datasets/laposte-hexasmal/raw)
 datasets, then enriches them (location typology, postal codes).
 
 ## Three readings of the same documentation

@@ -3,7 +3,7 @@ from pydantic import BaseModel
 
 class LaPosteSupplierConfig(BaseModel):
     endpoint_url: str = (
-        "https://datanova.laposte.fr/data-fair/api/v1/datasets/laposte-hexasmal/raw"
+        "https://data.laposte.fr/data-fair/api/v1/datasets/laposte-hexasmal/raw"
     )
     backoff_factor: float = 0.5
     max_retries: int = 5
