@@ -6,7 +6,7 @@ results. Duration: about 15 minutes.
 ## 1. Prerequisites
 
 - Python >= 3.11
-- Network access to the INSEE and LaPoste endpoints
+- Network access to the INSEE, LaPoste and IGN (Géoplateforme) endpoints
 
 ## 2. Installation
 
@@ -28,7 +28,7 @@ poetry run geo_data_collector \
     --overwrite-working-directory
 ```
 
-The terminal shows the progress of the five pipeline steps
+The terminal shows the progress of the six pipeline steps
 (default log level: `INFO`).
 
 ## 4. Check the results
@@ -41,7 +41,8 @@ output/
 ├── 02_processing/    # LaPoste Hexasmal
 ├── 03_processing/    # Corrected departements (metropolitan France)
 ├── 04_processing/    # Typed communes (location_typology column)
-└── 05_processing/    # Communes + postal codes (postal_codes* columns)
+├── 05_processing/    # Communes + postal codes (postal_codes* columns)
+└── 06_processing/    # IGN Admin Express COG contours (cleaned/*.parquet)
 ```
 
 Open for instance `01_processing/cleaned/communes.csv`: each row is a dated

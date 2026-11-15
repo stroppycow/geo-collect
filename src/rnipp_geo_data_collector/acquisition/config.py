@@ -5,6 +5,10 @@ import yaml
 from pydantic import BaseModel, ValidationError
 from pydantic_settings import SettingsConfigDict
 
+from .suppliers.adminexpress.config import (
+    AdminExpressExceptionsToIgnoreOrCorrect,
+    AdminExpressSupplierConfig,
+)
 from .suppliers.insee.config import (
     InseeExceptionsToIgnoreOrCorrect,
     InseeSupplierConfig,
@@ -52,6 +56,7 @@ def _from_file[ModelT: BaseModel](cls: type[ModelT], file_path: str | Path) -> M
 class AcquisitionConfig(BaseModel):
     insee: InseeSupplierConfig = InseeSupplierConfig()
     laposte: LaPosteSupplierConfig = LaPosteSupplierConfig()
+    adminexpress: AdminExpressSupplierConfig = AdminExpressSupplierConfig()
 
     model_config = SettingsConfigDict(
         env_prefix="GEOCOLLECT_", env_nested_delimiter="__"
@@ -66,6 +71,9 @@ class AcquisitionConfig(BaseModel):
 class ErrorHandlerConfig(BaseModel):
     insee: InseeExceptionsToIgnoreOrCorrect = InseeExceptionsToIgnoreOrCorrect()
     laposte: LaPosteExceptionsToIgnoreOrCorrect = LaPosteExceptionsToIgnoreOrCorrect()
+    adminexpress: AdminExpressExceptionsToIgnoreOrCorrect = (
+        AdminExpressExceptionsToIgnoreOrCorrect()
+    )
 
     @classmethod
     def from_file(cls, file_path: str | Path) -> "ErrorHandlerConfig":

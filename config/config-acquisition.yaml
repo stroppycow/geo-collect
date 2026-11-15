@@ -16,3 +16,11 @@ wikidata:
   max_retries: 5
   connect_timeout: 20
   read_timeout: 15
+adminexpress:
+  catalog_url: "https://data.geopf.fr/telechargement/resource/ADMIN-EXPRESS-COG"
+  zone: "FRA"
+  format: "GeoParquet"
+  backoff_factor: 0.5
+  max_retries: 5
+  connect_timeout: 20
+  read_timeout: 600

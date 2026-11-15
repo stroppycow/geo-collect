@@ -54,4 +54,20 @@ def init_duckdb_connection(
         logger.warning(f"Unable to load JSON extension in DuckDB : {e}")
         raise RuntimeError(f"Unable to load JSON extension in DuckDB : {e}") from e
 
+    # The spatial extension is required to read and write GeoParquet files
+    # (Admin Express COG acquisition): geometry columns are typed GEOMETRY.
+    try:
+        logger.info("Loading spatial extension for DuckDB")
+        con.load_extension("spatial")
+    except duckdb.Error:
+        logger.info("spatial extension not loadable directly, trying to install it")
+        try:
+            con.install_extension("spatial")
+            con.load_extension("spatial")
+        except duckdb.Error as e:
+            logger.error(f"Unable to load spatial extension in DuckDB : {e}")
+            raise RuntimeError(
+                f"Unable to load spatial extension in DuckDB : {e}"
+            ) from e
+
     return con

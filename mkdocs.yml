@@ -81,6 +81,7 @@ nav:
           - "03 — Metropolitan France correction": explanation/steps/03-metropolitan-france-correction.md
           - "04 — Communes typology": explanation/steps/04-communes-typology.md
           - "05 — Postal codes merge": explanation/steps/05-postal-codes-merge.md
+          - "06 — Download Admin Express COG": explanation/steps/06-download-adminexpress-cog.md
   - Reference:
       - CLI: reference/cli.md
       - Configuration: reference/configuration.md

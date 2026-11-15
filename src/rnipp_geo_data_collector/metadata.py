@@ -44,6 +44,20 @@ class StringListColumnDataType(ColumnDataType):
         return super().__eq__(other) and self.sep == other.sep
 
 
+class GeometryColumnDataType(ColumnDataType):
+    def __init__(self, name: str, crs: str = "OGC:CRS84"):
+        super().__init__(name=name, duckdb_type=f"GEOMETRY('{crs}')")
+        self.crs = crs
+
+    def get_duckdb_parsing(self) -> str:
+        return f"{self.name}"
+
+    def __eq__(self, other):
+        if not isinstance(other, GeometryColumnDataType):
+            return False
+        return super().__eq__(other) and self.crs == other.crs
+
+
 class BooleanColumnDataType(ColumnDataType):
     def __init__(self, name: str):
         super().__init__(name=name, duckdb_type="BOOLEAN")
@@ -141,6 +155,41 @@ class GeoCSVFileMetadata(FileMetadata):
             delim=self.delim,
             header="true" if self.header else "false",
             encoding=self.encoding,
+        )
+
+
+class GeoParquetFileMetadata(FileMetadata):
+    """Metadata of a GeoParquet file.
+
+    Columns keep their native Parquet types (a geometry column is read as
+    DuckDB ``GEOMETRY`` once the spatial extension is loaded), so the import
+    query selects the columns by name without any cast.
+    """
+
+    def __init__(
+        self,
+        path: Path,
+        colnames: list[ColumnDataType],
+    ):
+        super().__init__(path=path)
+        self.colnames = colnames
+
+    def get_duckdb_sql_import_query(
+        self, keep_colnames: list[str] | None = None
+    ) -> str:
+        return """
+            SELECT
+                {columns_spec}
+            FROM read_parquet('{path}')
+        """.format(
+            columns_spec=", ".join(
+                [
+                    c.name
+                    for c in self.colnames
+                    if keep_colnames is None or c.name in keep_colnames
+                ]
+            ),
+            path=str(self.path.resolve()),
         )
 
 

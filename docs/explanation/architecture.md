@@ -13,6 +13,7 @@ flowchart TB
     PROC --> GRAPH[graph/graph_event.py]
     ACQ --> CHECKS_INSEE[suppliers/insee/checks/<br/>17 checks]
     ACQ --> CHECKS_LAPOSTE[suppliers/laposte/checks/<br/>6 checks]
+    ACQ --> CHECKS_IGN[suppliers/adminexpress/checks/<br/>5 checks]
     ACQ --> CONFIG[config.py<br/>pydantic]
     UTILS[utils/<br/>duckdb, logging] --> MAIN
     META[metadata.py<br/>InfoCurrentStoredData] --> MAIN
@@ -31,12 +32,12 @@ flowchart TB
 | `cli.py` | Typer boundary: command-line options → `main.collect_geo_data` |
 | `main.py` | Pipeline orchestration, working directory management, clean connection shutdown |
 | `acquisition/config.py` | pydantic models `AcquisitionConfig` / `ErrorHandlerConfig` + YAML/JSON loading |
-| `acquisition/suppliers/{insee,laposte}/requests.py` | HTTP/SPARQL requests per entity type, raw CSV writing |
-| `acquisition/suppliers/{insee,laposte}/checks/` | Post-download quality checks (`Check*` classes) |
-| `processings/` | The five enrichment steps (`download_*`, `*_correction`, `communes_typology`, `postal_codes_merge`) |
+| `acquisition/suppliers/{insee,laposte,adminexpress}/requests.py` | HTTP/SPARQL/catalog requests per entity type, raw file writing (CSV / GeoParquet) |
+| `acquisition/suppliers/{insee,laposte,adminexpress}/checks/` | Post-download quality checks (`Check*` classes) |
+| `processings/` | The six pipeline steps (`download_*`, `*_correction`, `communes_typology`, `postal_codes_merge`) |
 | `graph/graph_event.py` | `igraph` event graph built from the DuckDB views |
 | `metadata.py` | Registry of loaded data (`InfoCurrentStoredData`) and column typing (`ColumnDataType`) |
-| `utils/duckdb.py` | DuckDB connection setup (ICU/JSON extensions, memory/thread limits) |
+| `utils/duckdb.py` | DuckDB connection setup (ICU/JSON/spatial extensions, memory/thread limits) |
 
 ## Data flow of a run
 
@@ -51,7 +52,7 @@ sequenceDiagram
     C->>M: typed options
     M->>F: working directory creation
     M->>D: init (extensions, threads, limits)
-    loop Steps 01 to 05
+    loop Steps 01 to 06
         M->>F: read config / write CSV + registry
         M->>D: SQL views + check queries
         D-->>M: results (anomalous row = failure)
@@ -72,6 +73,9 @@ sequenceDiagram
 4. **A single graph**: steps 03, 04 and 05 build the event graph through
    the same function
    [`build_history_graph_of_geo_entities`](../reference/graph.md).
+5. **GeoParquet stays GeoParquet**: the Admin Express COG layers (step 06)
+   are downloaded, corrected and checked as GeoParquet files — the DuckDB
+   spatial extension types the `geometrie` column as `GEOMETRY` end to end.
 
 ## Documentation / code correspondence
 

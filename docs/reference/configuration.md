@@ -18,6 +18,10 @@ explicit message.
     options:
       show_root_heading: true
 
+::: rnipp_geo_data_collector.acquisition.suppliers.adminexpress.config.AdminExpressSupplierConfig
+    options:
+      show_root_heading: true
+
 ## Exception handling
 
 ::: rnipp_geo_data_collector.acquisition.config.ErrorHandlerConfig
@@ -31,6 +35,11 @@ Two families of objects in the `root` lists:
 - `InseeGeoRemove` — ignores an entity.
 
 Declared URIs must be unique (`check_unique_uri` validator).
+
+For Admin Express COG layers, the same mechanism is keyed by `cleabs`
+(`adminexpress.<layer>.root`): `AdminExpressGeoAddOrReplace` (attribute
+columns in `fields`, contour as WKT in `geometrie_wkt`) or
+`AdminExpressGeoRemove`. Declared `cleabs` must be unique per list.
 
 ## File loading
 

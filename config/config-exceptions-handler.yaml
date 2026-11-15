@@ -570,3 +570,9 @@ insee:
         end_date: "2018-01-01"
   collectivites_outremer:
       - uri: "http://id.insee.fr/geo/collectiviteDOutreMer/163502e0-72fb-4dab-99d8-996a858733c9"
+adminexpress:
+  collectivites_territoriales: []
+  arrondissements_municipaux: []
+  departements: []
+  communes: []
+  communes_associees_ou_deleguees: []

@@ -1,6 +1,6 @@
 # Processings API
 
-Module `rnipp_geo_data_collector.processings`: the five pipeline steps.
+Module `rnipp_geo_data_collector.processings`: the six pipeline steps.
 Each function is documented by its step card.
 
 | Function | Card |
@@ -10,12 +10,15 @@ Each function is documented by its step card.
 | `correct_metropolitan_france_dummy` | [03 — Metropolitan France correction](../explanation/steps/03-metropolitan-france-correction.md) |
 | `typologize_communes` | [04 — Communes typology](../explanation/steps/04-communes-typology.md) |
 | `merge_postal_codes` | [05 — Postal codes merge](../explanation/steps/05-postal-codes-merge.md) |
+| `download_adminexpress_data` | [06 — Download Admin Express COG](../explanation/steps/06-download-adminexpress-cog.md) |
 
 ## Download
 
 ::: rnipp_geo_data_collector.processings.download_cog_data
 
 ::: rnipp_geo_data_collector.processings.download_laposte_data
+
+::: rnipp_geo_data_collector.processings.download_adminexpress_data
 
 ## Enrichment
 

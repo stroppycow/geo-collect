@@ -25,6 +25,7 @@ Typical changes and where to make them:
 |---|---|---|
 | Add an INSEE quality check | Class in `acquisition/suppliers/insee/checks/` inheriting `DataValidationAndConsistencyInseeCog`, referenced in `download_cog_data` | [01](../explanation/steps/01-download-insee-cog.md) |
 | Add a LaPoste check | Class in `acquisition/suppliers/laposte/checks/` | [02](../explanation/steps/02-download-laposte.md) |
+| Add an Admin Express check or layer | Class in `acquisition/suppliers/adminexpress/checks/`, request subclass in `adminexpress/requests.py` | [06](../explanation/steps/06-download-adminexpress-cog.md) |
 | Change metropolitan France semantics | `_correct_record_metropolitan_france_dummy` | [03](../explanation/steps/03-metropolitan-france-correction.md) |
 | Add a typology | `LocationRule` in `compute_location_typologies` | [04](../explanation/steps/04-communes-typology.md) |
 | Change postal code attribution | `assign_postal_codes_by_hexasmal_labels` / `get_postal_codes_historical_geo_entity` | [05](../explanation/steps/05-postal-codes-merge.md) |

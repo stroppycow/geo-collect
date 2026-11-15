@@ -7,6 +7,7 @@ import duckdb
 from .acquisition.config import AcquisitionConfig, ErrorHandlerConfig
 from .metadata import InfoCurrentStoredData
 from .processings.communes_typology import typologize_communes
+from .processings.download_adminexpress_data import download_adminexpress_data
 from .processings.download_cog_data import download_cog_data
 from .processings.download_laposte_data import download_laposte_data
 from .processings.metropolitan_france_dummy_correction import (
@@ -161,6 +162,19 @@ def collect_geo_data(
         _close_duckdb_connection(duckdb_connection)
         logger.error("Failed to merge postal codes")
         raise RuntimeError(f"Failed to merge postal codes: {e}") from e
+
+    try:
+        download_adminexpress_data(
+            acquisition_config=acquisition_config,
+            exceptions_handler_config=exceptions_handler_config,
+            duckdb_conn=duckdb_connection,
+            output_dir=working_directory_path / "06_processing",
+            current_stored_data=current_stored_data,
+        )
+    except Exception as e:
+        _close_duckdb_connection(duckdb_connection)
+        logger.error("Failed to download Admin Express COG data")
+        raise RuntimeError(f"Failed to download Admin Express COG data: {e}") from e
 
     try:
         duckdb_connection.close()

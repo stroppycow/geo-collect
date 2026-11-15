@@ -47,10 +47,10 @@ USER collector
 ENV HOME=/home/collector
 WORKDIR /data
 
-# Pre-install the DuckDB extensions (icu, json) loaded by
+# Pre-install the DuckDB extensions (icu, json, spatial) loaded by
 # utils/duckdb.py so the container does not need network access at
 # runtime to fetch them.
-RUN python -c "import duckdb; con = duckdb.connect(); con.install_extension('icu'); con.install_extension('json'); con.close()"
+RUN python -c "import duckdb; con = duckdb.connect(); con.install_extension('icu'); con.install_extension('json'); con.install_extension('spatial'); con.close()"
 
 ENTRYPOINT ["geo_data_collector"]
 CMD ["--help"]

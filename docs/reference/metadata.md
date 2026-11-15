@@ -12,6 +12,10 @@ is registered with its path and its typed columns. Pipeline steps read
     options:
       show_root_heading: true
 
+::: rnipp_geo_data_collector.metadata.GeoParquetFileMetadata
+    options:
+      show_root_heading: true
+
 ## Column typing
 
 Every column carries a `ColumnDataType` that holds both the DuckDB type
@@ -23,6 +27,7 @@ and the SQL parsing expression:
 | `StringListColumnDataType` | `VARCHAR` | Separated lists (e.g. `parent_uri`) |
 | `BooleanColumnDataType` | `BOOLEAN` | Flags (e.g. `is_france_metropolitaine`) |
 | `DateColumnDataType` | `DATE` | Validity dates |
+| `GeometryColumnDataType` | `GEOMETRY('OGC:CRS84')` | Contours (Admin Express COG, GeoParquet) |
 
 ::: rnipp_geo_data_collector.metadata.ColumnDataType
     options:

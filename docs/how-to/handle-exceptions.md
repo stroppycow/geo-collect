@@ -1,7 +1,7 @@
 # Handle COG exceptions
 
-Goal: ignore or correct a known INSEE/LaPoste data anomaly without waiting
-for an upstream fix.
+Goal: ignore or correct a known INSEE/LaPoste/IGN data anomaly without
+waiting for an upstream fix.
 
 ## When to use this mechanism
 
@@ -52,5 +52,21 @@ cat output/01_processing/remove/communes.csv
   + ticket) so it can be dropped once the anomaly is fixed upstream.
 - The same mechanism exists for LaPoste (`laposte.root`: manual mapping of an
   Hexasmal label to an INSEE entity).
+- For IGN Admin Express COG (step 06), exceptions are declared per layer
+  under `adminexpress.<layer>.root`, keyed by `cleabs`: `AdminExpressGeoRemove`
+  ignores an entity, `AdminExpressGeoAddOrReplace` corrects one (attribute
+  columns in `fields`, contour as WKT in `geometrie_wkt`):
+
+  ```yaml
+  adminexpress:
+    communes:
+      - cleabs: "COMMUNE_0000000000012345"   # AdminExpressGeoAddOrReplace
+        fields:
+          nom_officiel: "Nom corrigé"
+          code_postal: "75001"
+        geometrie_wkt: "MULTIPOLYGON(((2.3 48.8, ...)))"
+      - cleabs: "COMMUNE_0000000000099999"   # AdminExpressGeoRemove: dropped
+  ```
+
 - For the full object schemas, see
   [Configuration](../reference/configuration.md).
