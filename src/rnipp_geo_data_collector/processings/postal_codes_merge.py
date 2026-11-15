@@ -139,190 +139,155 @@ def get_postal_codes_current_geo_entity(
     return []
 
 
-def get_leaves_geo_entity_graph(vertex: igraph.Vertex) -> list[igraph.Vertex]:
-    reachable = vertex.graph.subcomponent(vertex.index, mode="OUT")
-    leaves = [
-        vertex.graph.vs[v]
-        for v in reachable
-        if vertex.graph.vs[v].degree(mode="OUT") == 0
-    ]
-    return leaves
+def _label_similarity_score(s1: str, s2: str) -> float:
+    """Similarity score (0-100) between two raw labels after normalisation."""
+    return fuzz.ratio(
+        normalize_location_label(s1),
+        normalize_location_label(s2),
+    )
 
 
-def path_to_leaf_is_unique_in_and_out(vertex: igraph.Vertex) -> bool:
-    reachable = vertex.graph.subcomponent(vertex.index, mode="OUT")
-    return not [
-        v
-        for v in reachable
-        if v != vertex.index and vertex.graph.vs[v].degree(mode="IN") > 1
-    ]
-
-
-class GeoEntityVertexInfo:
-    def __init__(self, uri: str, label: str, insee_code: str, postal_codes: list[str]):
-        self.uri = uri
-        self.label = label
-        self.insee_code = insee_code
-        self.postal_codes = postal_codes
-
-
-def get_vertices_info(
-    graph: igraph.Graph,
-    ids: list[int],
-    insee_colname_uri_label: str,
+def assign_postal_codes_by_hexasmal_labels(
+    subgraph: igraph.Graph,
+    hexasmal_data_dict: dict[str, list[tuple[str, str, str, str]]],
+    postal_codes_by_vertex: dict[int, set[str]],
     insee_colname_label_label: str,
     insee_colname_insee_code_label: str,
-    postal_codes_attribute: str,
-) -> list[GeoEntityVertexInfo]:
-    vertices: list = []
-    for id in ids:
-        if 0 <= id < len(graph.vs):
-            vertices.append(graph.vs[id])
-    res: list[GeoEntityVertexInfo] = []
-    for v in vertices:
-        uri = v.attributes().get(insee_colname_uri_label)
-        insee_label = v.attributes().get(insee_colname_label_label)
-        insee_code = v.attributes().get(insee_colname_insee_code_label)
-        postal_codes = v.attributes().get(postal_codes_attribute, [])
-        if not isinstance(uri, str):
-            raise TypeError(f"The uri of the vertex is not a string. It is {type(uri)}")
-        if not isinstance(insee_label, str):
-            raise TypeError(f"The insee_label of the vertex is not a string for {uri}")
-        if not isinstance(insee_code, str):
-            raise TypeError(f"The insee_code of the vertex is not a string for {uri}")
-        if isinstance(postal_codes, list) and all(
-            isinstance(value, str) for value in postal_codes
-        ):
-            res.append(
-                GeoEntityVertexInfo(
-                    uri=uri,
-                    label=insee_label,
-                    insee_code=insee_code,
-                    postal_codes=postal_codes,
-                )
-            )
-        else:
-            raise RuntimeError(
-                f"The postal_codes of the vertex is not a list for {uri}"
-            )
-    return res
+) -> dict[str, set[int]]:
+    """
+    Match the Hexasmal entries of every INSEE code present in the component
+    against the labels of the vertices that have no postal code yet.
 
+    An entry with an ``associated_name`` is attributed to the best matching
+    vertex (highest label similarity, closest to the source vertex on ties);
+    such a postal code is then *dedicated* to that vertex and will not be
+    propagated further up the graph. An entry without ``associated_name``
+    (or whose ``associated_name`` matches no vertex of the component) is
+    attributed to every vertex whose label matches the ``delivery_label``
+    or the Hexasmal ``name``.
 
-def extract_hexasmal_labels_from_hexasmal_infos(
-    hexasmal_data_dict: dict[str, list[tuple[str, str, str, str]]],
-    info_nodes_out: list[GeoEntityVertexInfo],
-) -> list[tuple[str, list[str]]]:
-    hexasmal_labels: list[tuple[str, list[str]]] = []
-    for n in info_nodes_out:
-        hexasmal_infos = hexasmal_data_dict.get(n.insee_code, [])
-        if len(hexasmal_infos) == 0:
-            return []
-        elif len(hexasmal_infos) == 1:
-            if hexasmal_infos[0][2] is None:
-                return []
-            if hexasmal_infos[0][2] == "":
-                return []
-            hexasmal_labels.append((hexasmal_infos[0][2], [hexasmal_infos[0][1]]))
-        else:
-            hexasmal_postal_codes = [
-                x[1] for x in hexasmal_infos if x[1] is not None and x[1] != ""
-            ]
-            hexasmal_delivery_label = [
-                x[2] for x in hexasmal_infos if x[2] is not None and x[2] != ""
-            ]
-            hexasmal_associated_name = [
-                x[3] for x in hexasmal_infos if x[3] is not None and x[3] != ""
-            ]
-            if len(hexasmal_associated_name) == 0 and len(
-                hexasmal_delivery_label
-            ) == len(hexasmal_infos):
-                if len(list(set(hexasmal_delivery_label))) == 1:
-                    hexasmal_labels.append(
-                        (hexasmal_delivery_label[0], list(set(hexasmal_postal_codes)))
-                    )
-                else:
-                    return []
-            elif len(hexasmal_associated_name) == (len(hexasmal_infos) - 1) and len(
-                hexasmal_delivery_label
-            ) == len(hexasmal_infos):
-                if (
-                    len(list(set(hexasmal_associated_name)))
-                    == (len(hexasmal_infos) - 1)
-                    and len(list(set(hexasmal_delivery_label))) == 1
-                ):
-                    hexasmal_labels.append(
-                        (
-                            hexasmal_delivery_label[0],
-                            [
-                                x[1]
-                                for x in hexasmal_infos
-                                if not (x[3] is not None and x[3] != "")
-                            ],
+    Returns the mapping ``postal_code -> dedicated vertex indices``.
+    """
+    n = subgraph.vcount()
+    labels = [subgraph.vs[i][insee_colname_label_label] for i in range(n)]
+    targets = [i for i in range(n) if not postal_codes_by_vertex[i]]
+    dedicated: dict[str, set[int]] = {}
+    for source in range(n):
+        insee_code = subgraph.vs[source][insee_colname_insee_code_label]
+        for (
+            name,
+            postal_code,
+            delivery_label,
+            associated_name,
+        ) in hexasmal_data_dict.get(insee_code, []):
+            if not postal_code:
+                continue
+            matched = False
+            if associated_name:
+                scores = {
+                    i: _label_similarity_score(labels[i], associated_name)
+                    for i in targets
+                    if i != source
+                }
+                candidates = {i: s for i, s in scores.items() if s >= 90.0}
+                if candidates:
+                    cand_list = list(candidates)
+                    distances = subgraph.distances(source, cand_list, mode="ALL")[0]
+                    winner = cand_list[
+                        min(
+                            range(len(cand_list)),
+                            key=lambda k: (-candidates[cand_list[k]], distances[k]),
                         )
-                    )
-                    hexasmal_labels.extend(
-                        [
-                            (x[3], [x[1]])
-                            for x in hexasmal_infos
-                            if x[3] is not None and x[3] != ""
-                        ]
-                    )
-                else:
-                    return []
-            elif len(hexasmal_associated_name) == len(hexasmal_infos) and len(
-                hexasmal_delivery_label
-            ) == len(hexasmal_infos):
-                if (
-                    len(list(set(hexasmal_associated_name))) == len(hexasmal_infos)
-                    and len(list(set(hexasmal_delivery_label))) == 1
-                ):
-                    hexasmal_labels.extend(
-                        [
-                            (x[3], [x[1]])
-                            for x in hexasmal_infos
-                            if x[3] is not None and x[3] != ""
-                        ]
-                    )
-                elif len(list(set(hexasmal_associated_name))) == 1 and len(
-                    list(set(hexasmal_delivery_label))
-                ) == len(hexasmal_infos):
-                    hexasmal_labels.append(
-                        (hexasmal_associated_name[0], list(set(hexasmal_postal_codes)))
-                    )
-                else:
-                    return []
-            else:
-                return []
-    if len(list({x[0] for x in hexasmal_labels})) == len(hexasmal_labels):
-        return hexasmal_labels
-    else:
-        return []
+                    ]
+                    postal_codes_by_vertex[winner].add(postal_code)
+                    dedicated.setdefault(postal_code, set()).add(winner)
+                    matched = True
+            if not matched:
+                for i in targets:
+                    if i == source:
+                        continue
+                    if is_label_location_similar(
+                        labels[i], delivery_label
+                    ) or is_label_location_similar(labels[i], name):
+                        postal_codes_by_vertex[i].add(postal_code)
+    return dedicated
 
 
-def match_hexasmal_labels_to_insee_labels(
-    hexasmal_labels: list[tuple[str, list[str]]],
-    info_nodes_in: list[GeoEntityVertexInfo],
-) -> dict[str, list[str]]:
-    output: dict[str, list[str]] = {}
-    if len(hexasmal_labels) > 0 and len(info_nodes_in) == len(hexasmal_labels):
-        similar_matrix = [[False] * len(info_nodes_in)] * len(hexasmal_labels)
-        similar_matrix_transpose = [[False] * len(hexasmal_labels)] * len(info_nodes_in)
-        for i, el in enumerate(hexasmal_labels):
-            for j, info in enumerate(info_nodes_in):
-                similar_matrix[i][j] = is_label_location_similar(
-                    s1=el[0], s2=info.label
-                )
-                similar_matrix_transpose[j][i] = similar_matrix[i][j]
-        for i in range(len(hexasmal_labels)):
-            filter_true = [j for j, x in enumerate(similar_matrix[i]) if x]
-            if filter_true:
-                if any(similar_matrix_transpose[i]):
-                    output[info_nodes_in[filter_true[0]].uri] = hexasmal_labels[i][1]
-                else:
-                    return {}
-            else:
-                return {}
-    return output
+def propagate_postal_codes_in_component(
+    subgraph: igraph.Graph,
+    postal_codes_by_vertex: dict[int, set[str]],
+    dedicated: dict[str, set[int]],
+) -> None:
+    """
+    Propagate postal codes inside a connected component until fixpoint:
+
+    - a vertex inherits the union of the postal codes of its predecessors
+      (a merged entity covers the territories of the entities it comes from);
+    - a vertex without any postal code and with a single successor inherits
+      the successor's postal codes, except those dedicated through an
+      ``associated_name`` to another vertex.
+    """
+    n = subgraph.vcount()
+    changed = True
+    while changed:
+        changed = False
+        for i in range(n):
+            in_degree = subgraph.degree(i, mode="IN")
+            inherited = set()
+            for predecessor in subgraph.predecessors(i):
+                inherited |= postal_codes_by_vertex[predecessor]
+            # a merged entity (in-degree >= 2) covers the territories of all its
+            # predecessors, even if it already has postal codes of its own
+            if (
+                in_degree >= 2 or not postal_codes_by_vertex[i]
+            ) and inherited - postal_codes_by_vertex[i]:
+                postal_codes_by_vertex[i] |= inherited
+                changed = True
+            if not postal_codes_by_vertex[i]:
+                successors = subgraph.successors(i)
+                successors_with_codes = [
+                    s for s in successors if postal_codes_by_vertex[s]
+                ]
+                if len(successors) == 1 and successors_with_codes:
+                    for postal_code in postal_codes_by_vertex[successors_with_codes[0]]:
+                        if postal_code not in dedicated or i in dedicated[postal_code]:
+                            postal_codes_by_vertex[i].add(postal_code)
+                            changed = True
+
+
+def assign_postal_codes_from_arrondissements(
+    graph: igraph.Graph,
+    insee_colname_uri_label: str,
+    insee_colname_parent_uri_label: str,
+    postal_codes_attribute: str,
+) -> None:
+    """
+    Aggregate the postal codes of the municipal arrondissements into their
+    parent commune (e.g. Paris, Lyon, Marseille): a commune whose INSEE code
+    is absent from Hexasmal gets the union of its arrondissements' codes.
+    """
+    arrondissements_by_parent: dict[str, list[int]] = {}
+    for v in graph.vs:
+        uri = v[insee_colname_uri_label]
+        if isinstance(uri, str) and "arrondissementMunicipal" in uri:
+            parent_uri = v[insee_colname_parent_uri_label]
+            if isinstance(parent_uri, str):
+                for parent in parent_uri.split("|"):
+                    if parent:
+                        arrondissements_by_parent.setdefault(parent, []).append(v.index)
+    for v in graph.vs:
+        uri = v[insee_colname_uri_label]
+        if (
+            isinstance(uri, str)
+            and "/commune/" in uri
+            and not v[postal_codes_attribute]
+            and uri in arrondissements_by_parent
+        ):
+            postal_codes = set()
+            for arr_index in arrondissements_by_parent[uri]:
+                postal_codes |= set(graph.vs[arr_index][postal_codes_attribute])
+            if postal_codes:
+                v[postal_codes_attribute] = sorted(postal_codes)
 
 
 def get_postal_codes_historical_geo_entity(
@@ -333,55 +298,56 @@ def get_postal_codes_historical_geo_entity(
     insee_colname_insee_code_label: str,
     postal_codes_attribute: str,
 ) -> None:
+    """
+    Retrodicate the postal codes of the current (leaf) entities to the
+    historical entities of each connected component of the event graph.
+
+    If every leaf of a component shares the same single postal code, it is
+    propagated to the whole component. Otherwise, the Hexasmal labels
+    (``delivery_label`` / ``associated_name``) of the component are matched
+    against the INSEE labels, and the remaining vertices inherit postal codes
+    from their predecessors or their unique successor.
+    """
     components = graph.connected_components(mode="weak")
-    for c in components:
-        if len(c) > 1:
-            subgraph = graph.subgraph(c)
-            degrees_out = subgraph.degree(mode="OUT")
-            nodes_out = [i for i, d in enumerate(degrees_out) if d == 0]
-            info_nodes_out = get_vertices_info(
-                graph=subgraph,
-                ids=nodes_out,
-                insee_colname_uri_label=insee_colname_uri_label,
+    for component in components:
+        if len(component) < 2:
+            continue
+        subgraph = graph.subgraph(component)
+        postal_codes_by_vertex: dict[int, set[str]] = {
+            i: set(subgraph.vs[i][postal_codes_attribute])
+            for i in range(subgraph.vcount())
+        }
+        leaves = [
+            i for i in range(subgraph.vcount()) if subgraph.degree(i, mode="OUT") == 0
+        ]
+        if not leaves:
+            continue
+        leaves_postal_codes = [tuple(sorted(postal_codes_by_vertex[i])) for i in leaves]
+        if (
+            all(len(p) == 1 for p in leaves_postal_codes)
+            and len(set(leaves_postal_codes)) == 1
+        ):
+            shared_postal_code = list(leaves_postal_codes[0])
+            for i in range(subgraph.vcount()):
+                if not postal_codes_by_vertex[i]:
+                    postal_codes_by_vertex[i] = set(shared_postal_code)
+        else:
+            dedicated = assign_postal_codes_by_hexasmal_labels(
+                subgraph=subgraph,
+                hexasmal_data_dict=hexasmal_data_dict,
+                postal_codes_by_vertex=postal_codes_by_vertex,
                 insee_colname_label_label=insee_colname_label_label,
                 insee_colname_insee_code_label=insee_colname_insee_code_label,
-                postal_codes_attribute=postal_codes_attribute,
             )
-            postal_codes_out = list({y for x in info_nodes_out for y in x.postal_codes})
-            postal_codes_everywhere = all(
-                len(x.postal_codes) > 0 for x in info_nodes_out
+            propagate_postal_codes_in_component(
+                subgraph=subgraph,
+                postal_codes_by_vertex=postal_codes_by_vertex,
+                dedicated=dedicated,
             )
-            if (
-                len(nodes_out) > 0
-                and len(postal_codes_out) == 1
-                and len(postal_codes_out) == 1
-                and postal_codes_everywhere
-            ):
-                for v in subgraph.vs:
-                    graph.vs.find(name=v[insee_colname_uri_label])[
-                        postal_codes_attribute
-                    ] = postal_codes_out
-            else:
-                """
-                info_nodes_in = get_vertices_info(
-                    graph=subgraph,
-                    ids=nodes_in,
-                    insee_colname_uri_label=insee_colname_uri_label,
-                    insee_colname_label_label=insee_colname_label_label,
-                    insee_colname_insee_code_label=insee_colname_insee_code_label,
-                    postal_codes_attribute=postal_codes_attribute
-                )
-                hexasmal_labels = extract_hexasmal_labels_from_hexasmal_infos(
-                    hexasmal_data_dict=hexasmal_data_dict,
-                    info_nodes_out=info_nodes_out
-                )
-                output = match_hexasmal_labels_to_insee_labels(
-                    hexasmal_labels=hexasmal_labels,
-                    info_nodes_in=info_nodes_in
-                )
-                for k,v in output.items():
-                    graph.vs.find(name=k)[postal_codes_attribute]=v
-                """
+        for local_index, global_index in enumerate(component):
+            graph.vs[global_index][postal_codes_attribute] = sorted(
+                postal_codes_by_vertex[local_index]
+            )
 
 
 def merge_postal_codes(
@@ -717,6 +683,13 @@ def merge_postal_codes(
         )
         print(f"current_count_assigned : {current_count_assigned}")
         print(f"previous_count_affected : {previous_count_affected}")
+
+    assign_postal_codes_from_arrondissements(
+        graph=graph,
+        insee_colname_uri_label=insee_colname_uri_label,
+        insee_colname_parent_uri_label="parent_uri",
+        postal_codes_attribute=graph_postal_codes_attributes,
+    )
 
     new_col_postal_codes_communes = StringListColumnDataType(
         name="postal_codes", sep="|"

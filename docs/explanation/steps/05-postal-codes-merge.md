@@ -22,8 +22,7 @@ difficulties:
 1. labels evolve (merges, renamings) — hence the event graph to propagate a
    postal code to the historical versions of the same entity;
 2. one label can match several entities — hence the disambiguation rules
-   (unique path to a graph leaf,
-   `path_to_leaf_is_unique_in_and_out`).
+   (`associated_name` dedication, unique-successor propagation).
 
 The "postal code → current commune only" alternative was rejected: it
 loses all historical information, which is the very purpose of the project.
@@ -49,9 +48,9 @@ flowchart LR
   (`src/rnipp_geo_data_collector/processings/postal_codes_merge.py`)
 - Key functions: `get_postal_codes_current_geo_entity`,
   `get_postal_codes_historical_geo_entity`,
-  `match_hexasmal_labels_to_insee_labels`,
-  `extract_hexasmal_labels_from_hexasmal_infos`,
-  `path_to_leaf_is_unique_in_and_out`, `get_leaves_geo_entity_graph`
+  `assign_postal_codes_by_hexasmal_labels`,
+  `propagate_postal_codes_in_component`,
+  `assign_postal_codes_from_arrondissements`
 - Graph: [`build_history_graph_of_geo_entities`](../../reference/graph.md)
   on `insee_communes`, `insee_arrondissements_municipaux`
 - Matching: `normalize_location_label` / `is_label_location_similar`
@@ -61,9 +60,13 @@ flowchart LR
 
 | Rule | Wording | Source |
 |---|---|---|
-| Label matching | Hexasmal label ≈ INSEE label after normalisation | `match_hexasmal_labels_to_insee_labels` |
-| Current entities | Postal codes attached to the matched current entity | `get_postal_codes_current_geo_entity` |
-| Historical entities | Propagation to ancestors when the path to the leaf is unique | `get_postal_codes_historical_geo_entity`, `path_to_leaf_is_unique_in_and_out` |
+| Current entities | Postal codes attached to the matched current entity (Hexasmal INSEE code + label) | `get_postal_codes_current_geo_entity` |
+| Shared leaf code | If every leaf of a connected component has the same single postal code, it is propagated to the whole component | `get_postal_codes_historical_geo_entity` |
+| Associated name | A Hexasmal entry with `associated_name` is attributed to the best-matching vertex (highest label similarity, closest to the source on ties) and dedicated to it | `assign_postal_codes_by_hexasmal_labels` |
+| Delivery label | An entry without `associated_name` (or with one matching no vertex) goes to every vertex whose label matches `delivery_label`/`name` | `assign_postal_codes_by_hexasmal_labels` |
+| Fusion (in-degree ≥ 2) | A merged entity inherits the union of its predecessors' postal codes, even if it already has some (fusion-défusion) | `propagate_postal_codes_in_component` |
+| Unique successor | A vertex with no code and a single successor inherits its codes, except those dedicated to another vertex | `propagate_postal_codes_in_component` |
+| Communes with arrondissements | A commune absent from Hexasmal (Paris, Lyon, Marseille) gets the union of its municipal arrondissements' codes | `assign_postal_codes_from_arrondissements` |
 | Ambiguity | A label matching several entities without disambiguation is not attributed | guards in the matching |
 | Count | `postal_codes_count` = cardinality of the attributed codes | final write |
 
@@ -73,7 +76,7 @@ flowchart LR
 |---|---|
 | **Inputs** | Tables `insee_communes`, `insee_arrondissements_municipaux`, `laposte_hexasmal` (registry), DuckDB |
 | **Outputs** | `<work>/05_processing/*.csv` with `postal_codes`, `postal_codes_count` columns |
-| **Dependencies** | `graph/graph_event.py`, igraph, rapidfuzz, `GeoEntityVertexInfo` |
+| **Dependencies** | `graph/graph_event.py`, igraph, rapidfuzz |
 
 ### Detailed behaviour
 
@@ -100,7 +103,7 @@ sequenceDiagram
 ### Change the behaviour
 
 - The disambiguation strategy lives in
-  `path_to_leaf_is_unique_in_and_out` and
+  `assign_postal_codes_by_hexasmal_labels` and
   `get_postal_codes_historical_geo_entity`: any attribution rule change
   goes through them.
 - The similarity threshold is shared with step 04 — if you change it,
