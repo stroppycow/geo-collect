@@ -13,6 +13,7 @@ from ..acquisition.suppliers.adminexpress.requests import (
     RequestAdminExpressDepartement,
 )
 from ..metadata import GeoParquetFileMetadata, InfoCurrentStoredData
+from ..utils.offline import send_or_use_offline_raw
 
 logger = logging.getLogger(__name__)
 
@@ -23,6 +24,7 @@ def download_adminexpress_data(
     duckdb_conn: duckdb.DuckDBPyConnection,
     output_dir: Path,
     current_stored_data: InfoCurrentStoredData,
+    offline_raw_dir: Path | None = None,
 ) -> None:
     """Download the Admin Express COG contours (GeoParquet) of the IGN for the
     COG entities: collectivités territoriales, arrondissements municipaux,
@@ -31,6 +33,10 @@ def download_adminexpress_data(
     The latest GeoParquet edition for the configured zone is resolved from the
     Géoplateforme download catalog; each layer is then downloaded, checked and
     registered in ``current_stored_data`` as a GeoParquet file.
+
+    In offline mode (``offline_raw_dir`` set), the raw GeoParquet files are
+    copied from ``offline_raw_dir`` instead of being downloaded (the catalog
+    is not queried either); the content checks are unchanged.
     """
     output_dir_adminexpress = output_dir
     output_dir_adminexpress.mkdir(parents=True, exist_ok=True)
@@ -96,7 +102,7 @@ def download_adminexpress_data(
         )
         logger.info(f"Downloading {request.description} from Admin Express COG")
         try:
-            request.send()
+            send_or_use_offline_raw(request, offline_raw_dir)
         except Exception as e:
             logger.error(f"Error downloading {request.description} data: {e}")
             raise RuntimeError(

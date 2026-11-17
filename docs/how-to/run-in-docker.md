@@ -14,8 +14,8 @@ docker build -t geo-collect .
 The image is a two-stage build: a builder stage installs the main
 dependencies with Poetry (the `dev` and `docs` groups are excluded), the
 runtime stage contains only the virtualenv at `/opt/venv`, an unprivileged
-`collector` user, and the DuckDB ICU/JSON extensions pre-installed (no
-network access needed at run time for extensions).
+`collector` user, and the DuckDB ICU/JSON/spatial extensions pre-installed
+(no network access needed at run time for extensions).
 
 ### Use the CI-built image
 
@@ -53,7 +53,7 @@ Without arguments, the container prints the CLI help (`docker run geo-collect`).
 |---|---|
 | Working directory | `/data` (intended mount point for configs and outputs) |
 | Runtime user | `collector` (uid 1000), unprivileged |
-| DuckDB extensions | ICU and JSON pre-installed in the image |
+| DuckDB extensions | ICU, JSON and spatial pre-installed in the image |
 | Performance options | `--threads`, `--duckdb-memory-limit` work as usual; the container memory limit can be set with `docker run --memory` |
 
 ## Points of attention
@@ -61,7 +61,10 @@ Without arguments, the container prints the CLI help (`docker run geo-collect`).
 - **File permissions**: the container writes as uid 1000. If your host
   output directory belongs to another uid, pre-create it with `chown` or
   run with `--user "$(id -u):$(id -g)"`.
-- **Network**: the collection itself queries the INSEE and LaPoste
-  endpoints, so the container needs outbound network access.
+- **Network**: the collection itself queries the INSEE, LaPoste and IGN
+  endpoints, so the container needs outbound network access — unless you run
+  in [offline mode](../reference/cli.md#offline-mode) with
+  `--offline --offline-data-directory` (mount the directory of
+  pre-downloaded raw files).
 - **Tags**: for a repeatable build, tag with the version:
   `docker build -t geo-collect:0.0.1 .`

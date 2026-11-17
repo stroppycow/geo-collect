@@ -32,11 +32,39 @@ def _close_duckdb_connection(duckdb_connection: duckdb.DuckDBPyConnection) -> No
         logger.error(f"Failed to close DuckDB connection: {e}")
 
 
+_KNOWN_OFFLINE_SOURCES = ("insee", "laposte", "adminexpress")
+
+
+def _parse_offline_sources(offline: bool, offline_sources: str | None) -> set[str]:
+    """Resolve which acquisition sources are read offline.
+
+    `--offline` means all sources; `--offline-sources` selects a
+    comma-separated subset of them (e.g. "adminexpress" or "insee,laposte").
+    """
+    if offline and offline_sources is not None:
+        raise ValueError("--offline and --offline-sources are mutually exclusive")
+    if offline:
+        return set(_KNOWN_OFFLINE_SOURCES)
+    if offline_sources is None:
+        return set()
+    sources = {s.strip().lower() for s in offline_sources.split(",") if s.strip()}
+    unknown = sources - set(_KNOWN_OFFLINE_SOURCES)
+    if unknown:
+        raise ValueError(
+            f"Unknown sources in --offline-sources: {sorted(unknown)}. "
+            f"Expected a comma-separated subset of: {', '.join(_KNOWN_OFFLINE_SOURCES)}"
+        )
+    return sources
+
+
 def collect_geo_data(
     acquisition_config_file: None | str | Path = None,
     exceptions_handler_config_file: None | str | Path = None,
     working_directory: None | str | Path = None,
     overwrite_working_directory: bool = False,
+    offline: bool = False,
+    offline_data_directory: None | str | Path = None,
+    offline_sources: str | None = None,
     threads: int = 1,
     duckdb_extension_directory: str | None = None,
     duckdb_memory_limit: str = "10GB",
@@ -48,6 +76,37 @@ def collect_geo_data(
 
     # Configure logging
     configure_logging(loglevel=loglevel, log_stdout=log_stdout, log_file=log_file)
+
+    # Set up offline mode (per source: raw files are provided instead of downloaded)
+    active_offline_sources = _parse_offline_sources(
+        offline=offline, offline_sources=offline_sources
+    )
+    offline_data_directory_path: Path | None = None
+    if active_offline_sources and offline_data_directory is None:
+        raise ValueError(
+            "Offline mode (--offline or --offline-sources) requires "
+            "--offline-data-directory with the pre-downloaded raw files"
+        )
+    if offline_data_directory is not None and not active_offline_sources:
+        raise ValueError(
+            "--offline-data-directory requires --offline or --offline-sources"
+        )
+    if offline_data_directory is not None:
+        if isinstance(offline_data_directory, str):
+            offline_data_directory_path = Path(offline_data_directory)
+        else:
+            offline_data_directory_path = offline_data_directory
+        if not offline_data_directory_path.is_dir():
+            raise ValueError(
+                f"Offline data directory {offline_data_directory_path} does not exist"
+            )
+        offline_data_directory_path = offline_data_directory_path.resolve()
+        logger.info(
+            f"Offline sources {sorted(active_offline_sources)}: raw files are read "
+            f"from {offline_data_directory_path} "
+            "(<dir>/insee/, <dir>/laposte/, <dir>/adminexpress/); no download will "
+            "be attempted for these sources"
+        )
 
     # Set up working directory
     logger.info("Setting up working directory")
@@ -101,6 +160,15 @@ def collect_geo_data(
         )
 
     current_stored_data = InfoCurrentStoredData()
+
+    def _offline_raw_dir(source: str) -> Path | None:
+        """Raw directory of an offline source: ``<offline-data-directory>/<source>/``
+        (e.g. ``<dir>/adminexpress/``), named after the source — not after the
+        processing step order."""
+        if offline_data_directory_path is None or source not in active_offline_sources:
+            return None
+        return offline_data_directory_path / source
+
     # Download COG data
     try:
         download_cog_data(
@@ -109,6 +177,7 @@ def collect_geo_data(
             duckdb_conn=duckdb_connection,
             output_dir=working_directory_path / "01_processing",
             current_stored_data=current_stored_data,
+            offline_raw_dir=_offline_raw_dir("insee"),
         )
     except Exception as e:
         _close_duckdb_connection(duckdb_connection)
@@ -122,6 +191,7 @@ def collect_geo_data(
             duckdb_conn=duckdb_connection,
             output_dir=working_directory_path / "02_processing",
             current_stored_data=current_stored_data,
+            offline_raw_dir=_offline_raw_dir("laposte"),
         )
     except Exception as e:
         _close_duckdb_connection(duckdb_connection)
@@ -170,6 +240,7 @@ def collect_geo_data(
             duckdb_conn=duckdb_connection,
             output_dir=working_directory_path / "06_processing",
             current_stored_data=current_stored_data,
+            offline_raw_dir=_offline_raw_dir("adminexpress"),
         )
     except Exception as e:
         _close_duckdb_connection(duckdb_connection)

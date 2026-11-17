@@ -9,6 +9,7 @@ from ..acquisition.suppliers.laposte.requests import (
     RequestLaPosteHexasmal,
 )
 from ..metadata import GeoCSVFileMetadata, InfoCurrentStoredData
+from ..utils.offline import send_or_use_offline_raw
 
 logger = logging.getLogger(__name__)
 
@@ -19,8 +20,14 @@ def download_laposte_data(
     duckdb_conn: duckdb.DuckDBPyConnection,
     output_dir: Path,
     current_stored_data: InfoCurrentStoredData,
+    offline_raw_dir: Path | None = None,
 ) -> None:
-    """Download data from supplied URLs."""
+    """Download data from supplied URLs.
+
+    In offline mode (``offline_raw_dir`` set), the raw CSV file is copied
+    from ``offline_raw_dir`` instead of being downloaded; the content checks
+    are unchanged.
+    """
     output_dir_laposte = output_dir
     output_dir_laposte.mkdir(parents=True, exist_ok=True)
     output_dir_laposte_raw = output_dir_laposte / "raw"
@@ -45,7 +52,7 @@ def download_laposte_data(
     )
     logger.info('Downloading "La Poste Hexasmal" data')
     try:
-        request_laposte_hexasmal.send()
+        send_or_use_offline_raw(request_laposte_hexasmal, offline_raw_dir)
     except Exception as e:
         logger.error(f'Error downloading "La Poste Hexasmal" data: {e}')
         raise RuntimeError(f'Failed to download "La Poste Hexasmal" data: {e}') from e

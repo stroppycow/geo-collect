@@ -81,6 +81,7 @@ class RequestLaPosteHexasmal:
     ):
         self.output_paths = output_paths
         self.view_name = "laposte_hexasmal"
+        self.description = '"La Poste Hexasmal" data'
         self.exceptions_handler_config = exceptions_handler_config
         self.sql_templates = TemplatesSQLRequestLaPosteHexasmal(
             copy=Path(__file__).parent / "sql" / "laposte_hexasmal_copy.mustache.sql",

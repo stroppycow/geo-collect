@@ -34,6 +34,7 @@ from ..acquisition.suppliers.insee.requests import (
     RequestsCOGTerritoires,
 )
 from ..metadata import GeoCSVFileMetadata, InfoCurrentStoredData
+from ..utils.offline import send_or_use_offline_raw
 
 logger = logging.getLogger(__name__)
 
@@ -44,8 +45,14 @@ def download_cog_data(
     duckdb_conn: duckdb.DuckDBPyConnection,
     output_dir: Path,
     current_stored_data: InfoCurrentStoredData,
+    offline_raw_dir: Path | None = None,
 ) -> None:
-    """Download data from supplied URLs."""
+    """Download data from supplied URLs.
+
+    In offline mode (``offline_raw_dir`` set), the raw CSV files are copied
+    from ``offline_raw_dir`` instead of being downloaded; the content checks
+    are unchanged.
+    """
     output_dir_insee = output_dir
     output_dir_insee.mkdir(parents=True, exist_ok=True)
     output_dir_insee_raw = output_dir_insee / "raw"
@@ -149,7 +156,7 @@ def download_cog_data(
 
     logger.info('Downloading "Communes" data from COG')
     try:
-        request_insee_commune.send()
+        send_or_use_offline_raw(request_insee_commune, offline_raw_dir)
     except Exception as e:
         logger.error(f'Error downloading "Communes" data: {e}')
         raise RuntimeError(f'Failed to download "Communes" data: {e}') from e
@@ -172,7 +179,9 @@ def download_cog_data(
 
     logger.info('Downloading "Arrondissements Municipaux" data from COG')
     try:
-        request_insee_arrondissements_municipaux.send()
+        send_or_use_offline_raw(
+            request_insee_arrondissements_municipaux, offline_raw_dir
+        )
     except Exception as e:
         logger.error(f'Error downloading "Arrondissements Municipaux" data: {e}')
         raise RuntimeError(
@@ -200,7 +209,7 @@ def download_cog_data(
 
     logger.info('Downloading "Departements" data from COG')
     try:
-        request_insee_departements.send()
+        send_or_use_offline_raw(request_insee_departements, offline_raw_dir)
     except Exception as e:
         logger.error(f'Error downloading "Departements" data: {e}')
         raise RuntimeError(f'Failed to download "Departements" data: {e}') from e
@@ -224,7 +233,7 @@ def download_cog_data(
 
     logger.info('Downloading "Collectivités d\'Outre-mer" data from COG')
     try:
-        request_insee_collectivites_outremer.send()
+        send_or_use_offline_raw(request_insee_collectivites_outremer, offline_raw_dir)
     except Exception as e:
         logger.error(f'Error downloading "Collectivités d\'Outre-mer" data: {e}')
         raise RuntimeError(
@@ -252,7 +261,7 @@ def download_cog_data(
 
     logger.info('Downloading "Districts" data from COG')
     try:
-        request_insee_districts.send()
+        send_or_use_offline_raw(request_insee_districts, offline_raw_dir)
     except Exception as e:
         logger.error(f'Error downloading "Districts" data: {e}')
         raise RuntimeError(f'Failed to download "Districts" data: {e}') from e
@@ -274,7 +283,7 @@ def download_cog_data(
 
     logger.info('Downloading "Pays" data from COG')
     try:
-        request_insee_pays.send()
+        send_or_use_offline_raw(request_insee_pays, offline_raw_dir)
     except Exception as e:
         logger.error(f'Error downloading "Pays" data: {e}')
         raise RuntimeError(f'Failed to download "Pays" data: {e}') from e
@@ -296,7 +305,7 @@ def download_cog_data(
 
     logger.info('Downloading "Territoires" data from COG')
     try:
-        request_insee_territoires.send()
+        send_or_use_offline_raw(request_insee_territoires, offline_raw_dir)
     except Exception as e:
         logger.error(f'Error downloading "Territoires" data: {e}')
         raise RuntimeError(f'Failed to download "Territoires" data: {e}') from e
